@@ -718,7 +718,7 @@ void SceneTab::RenderNodeTree(Node* node)
         const Variant& payload = ui::AcceptDragDropVariant("ptr");
         if (!payload.IsEmpty())
         {
-            SharedPtr<Node> child(dynamic_cast<Node*>(payload.GetPtr()));
+            auto child = dynamic_cast<Node*>(payload.GetPtr());
             if (child && child != node)
             {
                 node->AddChild(child);

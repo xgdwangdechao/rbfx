@@ -35,6 +35,7 @@
 #include "../IO/FileSystem.h"
 #include "../Resource/ResourceCache.h"
 #include "../Resource/Localization.h"
+#include "../Scene/Scene.h"
 #if URHO3D_NETWORK
 #include "../Network/Network.h"
 #endif
@@ -140,6 +141,10 @@ void RemoveNamedAttribute(ea::unordered_map<StringHash, ea::vector<AttributeInfo
 Context::Context() :
     eventHandler_(nullptr)
 {
+#ifndef MINI_URHO
+    defaultScene_ = MakeShared<Scene>(this);
+#endif
+
 #ifdef __ANDROID__
     // Always reset the random seed on Android, as the Urho3D library might not be unloaded between runs
     SetRandomSeed(1);

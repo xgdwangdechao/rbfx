@@ -84,5 +84,5 @@ private:
     void HandleUpdate(StringHash eventType, VariantMap& eventData);
 
     /// Sprite nodes.
-    ea::vector<SharedPtr<Node> > spriteNodes_;
+    ea::vector<WeakPtr<Node> > spriteNodes_;
 };

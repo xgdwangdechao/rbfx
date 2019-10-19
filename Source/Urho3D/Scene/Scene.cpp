@@ -47,6 +47,8 @@
 #include "../Scene/UnknownComponent.h"
 #include "../Scene/ValueAnimation.h"
 
+#include <EASTL/sort.h>
+
 #include "../DebugNew.h"
 
 namespace Urho3D
@@ -60,7 +62,7 @@ static const float DEFAULT_SMOOTHING_CONSTANT = 50.0f;
 static const float DEFAULT_SNAP_THRESHOLD = 5.0f;
 
 Scene::Scene(Context* context) :
-    Node(context),
+    Node(context, entt::null),
     replicatedNodeID_(FIRST_REPLICATED_ID),
     replicatedComponentID_(FIRST_REPLICATED_ID),
     localNodeID_(FIRST_LOCAL_ID),
@@ -75,6 +77,10 @@ Scene::Scene(Context* context) :
     asyncLoading_(false),
     threadedUpdate_(false)
 {
+    // TODO(entt): Detach Scene from Node and remove this call
+    entity_ = CreateNodeInternal(entt::null).first;
+    rootEntity_ = entity_;
+
     // Assign an ID to self so that nodes can refer to this node as a parent
     SetID(GetFreeNodeID(REPLICATED));
     NodeAdded(this);
@@ -85,6 +91,8 @@ Scene::Scene(Context* context) :
 
 Scene::~Scene()
 {
+    DebugValidateIntegrity();
+
     // Remove root-level components first, so that scene subsystems such as the octree destroy themselves. This will speed up
     // the removal of child nodes' components
     RemoveAllComponents();
@@ -95,6 +103,35 @@ Scene::~Scene()
         i->second->ResetScene();
     for (auto i = localNodes_.begin(); i != localNodes_.end(); ++i)
         i->second->ResetScene();
+
+    // TODO(entt): Remove
+    // {
+    // Reset stored "fake" pointer to avoid double deletion
+    reg_.get<SharedPtr<Node>>(rootEntity_).ResetLoseMemory();
+    // }
+}
+
+void Scene::DebugValidateIntegrity()
+{
+    // Collect nodes from hierarchy and from registry
+    auto hierarchyNodes = GetChildren(true);
+
+    ea::vector<Node*> registryNodes;
+    auto view = reg_.view<SharedPtr<Node>>();
+    for (unsigned i = 0; i < view.size(); ++i)
+    {
+        Node* node = view.raw()[i];
+        if (node != this)
+            registryNodes.push_back(node);
+    }
+
+    // All nodes must be the same and must have exactly one reference
+    ea::sort(hierarchyNodes.begin(), hierarchyNodes.end());
+    ea::sort(registryNodes.begin(), registryNodes.end());
+    assert(hierarchyNodes == registryNodes);
+
+    for (Node* node : registryNodes)
+        assert(node->Refs() == 1);
 }
 
 void Scene::RegisterObject(Context* context)
@@ -977,7 +1014,7 @@ void Scene::NodeAdded(Node* node)
     const ea::vector<SharedPtr<Component> >& components = node->GetComponents();
     for (auto i = components.begin(); i != components.end(); ++i)
         ComponentAdded(*i);
-    const ea::vector<SharedPtr<Node> >& children = node->GetChildren();
+    const ea::vector<Node*>& children = node->GetChildren();
     for (auto i = children.begin(); i != children.end(); ++i)
         NodeAdded(*i);
 }
@@ -1020,7 +1057,7 @@ void Scene::NodeRemoved(Node* node)
     const ea::vector<SharedPtr<Component> >& components = node->GetComponents();
     for (auto i = components.begin(); i != components.end(); ++i)
         ComponentRemoved(*i);
-    const ea::vector<SharedPtr<Node> >& children = node->GetChildren();
+    const ea::vector<Node*>& children = node->GetChildren();
     for (auto i = children.begin(); i != children.end(); ++i)
         NodeRemoved(*i);
 }
@@ -1175,6 +1212,36 @@ void Scene::MarkReplicationDirty(Node* node)
             nodeState->sceneState_->dirtyNodes_.insert(id);
         }
     }
+}
+
+ea::pair<entt::entity, Node*> Scene::CreateNodeInternal(entt::entity parentEntity)
+{
+    const entt::entity entity = reg_.create();
+
+    auto node = MakeShared<Node>(context_, entity);
+    reg_.assign<SharedPtr<Node>>(entity, node);
+
+    // TODO(entt): Remove
+    // Store self as fake SharedPtr, release ref to avoid circular reference
+    if (parentEntity == entt::null)
+    {
+        node.Reset();
+        auto& nodePtr = reg_.get<SharedPtr<Node>>(entity);
+        nodePtr = this;
+        --nodePtr->RefCountPtr()->refs_;
+    }
+
+    return ea::make_pair(entity, node);
+}
+
+void Scene::DestroyNodeInternal(entt::entity entity, Node* node)
+{
+    // Keep a shared pointer to the child about to be removed, to make sure the erase from container completes first. Otherwise
+    // it would be possible that other child nodes get removed as part of the node's components' cleanup, causing a re-entrant
+    // erase and a crash
+    SharedPtr<Node> sharedNode(node);
+
+    reg_.destroy(entity);
 }
 
 void Scene::HandleUpdate(StringHash eventType, VariantMap& eventData)

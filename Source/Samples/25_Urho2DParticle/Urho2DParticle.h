@@ -69,5 +69,5 @@ private:
     void HandleMouseMove(StringHash eventType, VariantMap& eventData);
 
     /// Particle scene node.
-    SharedPtr<Node> particleNode_;
+    WeakPtr<Node> particleNode_;
 };

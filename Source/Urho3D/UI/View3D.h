@@ -90,7 +90,7 @@ private:
     /// Scene.
     SharedPtr<Scene> scene_;
     /// Camera scene node.
-    SharedPtr<Node> cameraNode_;
+    WeakPtr<Node> cameraNode_;
     /// Own scene.
     bool ownScene_;
     /// Render texture format.

@@ -76,7 +76,7 @@ PasteResult SceneClipboard::Paste(Node* node)
     {
         nodeData.Seek(0);
         auto nodeID = nodeData.ReadUInt();
-        SharedPtr<Node> newNode(node->CreateChild(EMPTY_STRING, nodeID < FIRST_LOCAL_ID ? REPLICATED : LOCAL));
+        WeakPtr<Node> newNode(node->CreateChild(EMPTY_STRING, nodeID < FIRST_LOCAL_ID ? REPLICATED : LOCAL));
         nodeData.Seek(0);
         if (newNode->Load(nodeData))
         {

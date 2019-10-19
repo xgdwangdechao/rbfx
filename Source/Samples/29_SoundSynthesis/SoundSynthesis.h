@@ -90,7 +90,7 @@ private:
     void HandleUpdate(StringHash eventType, VariantMap& eventData);
 
     /// Scene node for the sound component.
-    SharedPtr<Node> node_;
+    WeakPtr<Node> node_;
     /// Sound stream that we update.
     SharedPtr<BufferedSoundStream> soundStream_;
     /// Instruction text.

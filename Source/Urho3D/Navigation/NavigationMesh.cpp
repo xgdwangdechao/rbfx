@@ -1076,7 +1076,7 @@ void NavigationMesh::CollectGeometries(ea::vector<NavigationGeometryInfo>& geome
 
     if (recursive)
     {
-        const ea::vector<SharedPtr<Node> >& children = node->GetChildren();
+        const ea::vector<Node*>& children = node->GetChildren();
         for (unsigned i = 0; i < children.size(); ++i)
             CollectGeometries(geometryList, children[i], processedNodes, recursive);
     }

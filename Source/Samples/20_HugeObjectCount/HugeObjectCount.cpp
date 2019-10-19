@@ -115,7 +115,7 @@ void HugeObjectCount::CreateScene()
                 boxNode->SetScale(0.25f);
                 auto* boxObject = boxNode->CreateComponent<StaticModel>();
                 boxObject->SetModel(cache->GetResource<Model>("Models/Box.mdl"));
-                boxNodes_.push_back(SharedPtr<Node>(boxNode));
+                boxNodes_.push_back(WeakPtr<Node>(boxNode));
             }
         }
     }
@@ -144,7 +144,7 @@ void HugeObjectCount::CreateScene()
                 Node* boxNode = scene_->CreateChild("Box");
                 boxNode->SetPosition(Vector3(x * 0.3f, 0.0f, y * 0.3f));
                 boxNode->SetScale(0.25f);
-                boxNodes_.push_back(SharedPtr<Node>(boxNode));
+                boxNodes_.push_back(WeakPtr<Node>(boxNode));
                 lastGroup->AddInstanceNode(boxNode);
             }
         }
@@ -153,7 +153,7 @@ void HugeObjectCount::CreateScene()
     // Create the camera. Create it outside the scene so that we can clear the whole scene without affecting it
     if (!cameraNode_)
     {
-        cameraNode_ = new Node(context_);
+        cameraNode_ = context_->GetDefaultScene()->CreateChild();
         cameraNode_->SetPosition(Vector3(0.0f, 10.0f, -100.0f));
         auto* camera = cameraNode_->CreateComponent<Camera>();
         camera->SetFarClip(300.0f);

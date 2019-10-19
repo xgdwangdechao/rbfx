@@ -28,6 +28,8 @@
 #include "../Math/Matrix3x4.h"
 #include "../Scene/Animatable.h"
 
+#include <entt/entity/registry.hpp>
+
 namespace Urho3D
 {
 
@@ -77,10 +79,12 @@ class URHO3D_API Node : public Animatable
     URHO3D_OBJECT(Node, Animatable);
 
     friend class Connection;
+    // TODO(entt): Detach Scene from Node and remove this connection
+    friend class Scene;
 
 public:
     /// Construct.
-    explicit Node(Context* context);
+    Node(Context* context, entt::entity entity);
     /// Destruct. Any child nodes are detached.
     ~Node() override;
     /// Register object factory.
@@ -319,6 +323,8 @@ public:
     void RemoveComponents(StringHash type);
     /// Remove all components from this node.
     void RemoveAllComponents();
+    /// Adjust index order of an existing child in this node.
+    void ReorderChild(Node* child, unsigned index);
     /// Adjust index order of an existing component in this node.
     void ReorderComponent(Component* component, unsigned index);
     /// Clone scene node, components and child nodes. Return the clone.
@@ -513,7 +519,7 @@ public:
     unsigned GetNumChildren(bool recursive = false) const;
 
     /// Return immediate child scene nodes.
-    const ea::vector<SharedPtr<Node> >& GetChildren() const { return children_; }
+    const ea::vector<Node*>& GetChildren() const { return children_; }
 
     /// Return child scene nodes, optionally recursive.
     void GetChildren(ea::vector<Node*>& dest, bool recursive = false) const;
@@ -656,7 +662,7 @@ private:
     /// Recalculate the world transform.
     void UpdateWorldTransform() const;
     /// Remove child node by iterator.
-    void RemoveChild(ea::vector<SharedPtr<Node> >::iterator i);
+    void RemoveChild(ea::vector<Node*>::iterator i);
     /// Return child nodes recursively.
     void GetChildrenRecursive(ea::vector<Node*>& dest) const;
     /// Return child nodes with a specific component recursively.
@@ -672,6 +678,8 @@ private:
     /// Handle attribute animation update event.
     void HandleAttributeAnimationUpdate(StringHash eventType, VariantMap& eventData);
 
+    /// Entity identified.
+    entt::entity entity_{ entt::null };
     /// World-space transform matrix.
     mutable Matrix3x4 worldTransform_;
     /// World transform needs update flag.
@@ -703,7 +711,7 @@ private:
     /// Components.
     ea::vector<SharedPtr<Component> > components_;
     /// Child scene nodes.
-    ea::vector<SharedPtr<Node> > children_;
+    ea::vector<Node*> children_;
     /// Node listeners.
     ea::vector<WeakPtr<Component> > listeners_;
     /// Pointer to implementation.

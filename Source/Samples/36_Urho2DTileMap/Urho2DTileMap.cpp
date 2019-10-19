@@ -93,7 +93,7 @@ void Urho2DTileMap::CreateScene()
     if (!tmxFile)
         return;
 
-    SharedPtr<Node> tileMapNode(scene_->CreateChild("TileMap"));
+    WeakPtr<Node> tileMapNode(scene_->CreateChild("TileMap"));
     tileMapNode->SetPosition(Vector3(0.0f, 0.0f, -1.0f));
 
     auto* tileMap = tileMapNode->CreateComponent<TileMap2D>();

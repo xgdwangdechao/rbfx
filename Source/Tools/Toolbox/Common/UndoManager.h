@@ -122,7 +122,7 @@ public:
         : editorScene(node->GetScene())
     {
         parentID = node->GetParent()->GetID();
-        parentIndex = node->GetParent()->GetChildren().index_of(SharedPtr<Node>(node));
+        parentIndex = node->GetParent()->GetChildren().index_of(node);
         node->Save(nodeData);
     }
 
@@ -133,9 +133,8 @@ public:
         {
             nodeData.Seek(0);
             auto nodeID = nodeData.ReadUInt();
-            SharedPtr<Node> node(new Node(parent->GetContext()));
-            node->SetID(nodeID);
-            parent->AddChild(node, parentIndex);
+            Node* node = parent->CreateChild(nodeID, Scene::IsReplicatedID(nodeID) ? REPLICATED : LOCAL);
+            parent->ReorderChild(node, parentIndex);
             nodeData.Seek(0);
             node->Load(nodeData);
         }

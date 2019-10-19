@@ -31,6 +31,8 @@
 namespace Urho3D
 {
 
+class Scene;
+
 /// Tracking structure for event receivers.
 class URHO3D_API EventReceiverGroup : public RefCounted
 {
@@ -251,6 +253,10 @@ public:
     inline Graphics* GetGraphics() const { return graphics_; }
     /// Return renderer subsystem.
     inline Renderer* GetRenderer() const { return renderer_; }
+#ifndef MINI_URHO
+    /// Return default scene.
+    inline Scene* GetDefaultScene() const { return defaultScene_; }
+#endif
 
     /// Register engine subsystem and cache it's pointer.
     void RegisterSubsystem(Engine* subsystem);
@@ -328,6 +334,10 @@ private:
     ea::unordered_map<ea::string, ea::vector<StringHash> > objectCategories_;
     /// Variant map for global variables that can persist throughout application execution.
     VariantMap globalVars_;
+#ifndef MINI_URHO
+    /// Default scene.
+    SharedPtr<Scene> defaultScene_;
+#endif
 
     /// Cached pointer of engine susbsystem.
     WeakPtr<Engine> engine_;

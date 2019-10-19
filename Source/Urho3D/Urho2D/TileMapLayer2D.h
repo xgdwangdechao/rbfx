@@ -124,7 +124,7 @@ private:
     /// Visible.
     bool visible_{true};
     /// Tile node or image nodes.
-    ea::vector<SharedPtr<Node> > nodes_;
+    ea::vector<WeakPtr<Node> > nodes_;
 };
 
 }

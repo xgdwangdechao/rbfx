@@ -141,7 +141,7 @@ void TileMap2D::SetTmxFile(TmxFile2D* tmxFile)
     {
         const TmxLayer2D* tmxLayer = tmxFile_->GetLayer(i);
 
-        Node* layerNode(rootNode_->CreateTemporaryChild(tmxLayer->GetName(), LOCAL));
+        Node* layerNode = rootNode_->CreateTemporaryChild(tmxLayer->GetName(), LOCAL);
 
         auto* layer = layerNode->CreateComponent<TileMapLayer2D>();
         layer->Initialize(this, tmxLayer);

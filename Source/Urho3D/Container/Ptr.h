@@ -156,6 +156,12 @@ public:
         Swap(copy);
     }
 
+    /// Reset without changing refount. For dirty hacks only.
+    void ResetLoseMemory()
+    {
+        ptr_ = nullptr;
+    }
+
     /// Detach without destroying the object even if the refcount goes zero. To be used for scripting language interoperation.
     T* Detach()
     {

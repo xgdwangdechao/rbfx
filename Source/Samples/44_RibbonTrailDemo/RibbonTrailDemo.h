@@ -57,9 +57,9 @@ protected:
     /// The time sword stop emitting trail.
     float swordTrailEndTime_;
     /// Box node 1.
-    SharedPtr<Node> boxNode1_;
+    WeakPtr<Node> boxNode1_;
     /// Box node 2.
-    SharedPtr<Node> boxNode2_;
+    WeakPtr<Node> boxNode2_;
     /// Sum of timestep.
     float timeStepSum_;
 

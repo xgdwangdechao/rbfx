@@ -130,7 +130,7 @@ void Urho2DPlatformer::CreateScene()
 
     // Create tile map from tmx file
     auto* cache = GetSubsystem<ResourceCache>();
-    SharedPtr<Node> tileMapNode(scene_->CreateChild("TileMap"));
+    WeakPtr<Node> tileMapNode(scene_->CreateChild("TileMap"));
     auto* tileMap = tileMapNode->CreateComponent<TileMap2D>();
     tileMap->SetTmxFile(cache->GetResource<TmxFile2D>("Urho2D/Tilesets/Ortho.tmx"));
     const TileMapInfo2D& info = tileMap->GetInfo();

@@ -222,7 +222,7 @@ void AnimationState::SetBoneWeight(unsigned index, float weight, bool recursive)
         Node* boneNode = stateTracks_[index].node_;
         if (boneNode)
         {
-            const ea::vector<SharedPtr<Node> >& children = boneNode->GetChildren();
+            const ea::vector<Node*>& children = boneNode->GetChildren();
             for (unsigned i = 0; i < children.size(); ++i)
             {
                 unsigned childTrackIndex = GetTrackIndex(children[i]);

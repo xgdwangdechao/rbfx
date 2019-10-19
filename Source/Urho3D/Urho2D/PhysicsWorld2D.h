@@ -258,9 +258,9 @@ protected:
         /// Rigid body B.
         SharedPtr<RigidBody2D> bodyB_;
         /// Node A.
-        SharedPtr<Node> nodeA_;
+        WeakPtr<Node> nodeA_;
         /// Node B.
-        SharedPtr<Node> nodeB_;
+        WeakPtr<Node> nodeB_;
         /// Shape A.
         SharedPtr<CollisionShape2D> shapeA_;
         /// Shape B.

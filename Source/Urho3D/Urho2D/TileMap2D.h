@@ -80,7 +80,7 @@ private:
     /// Tile map information.
     TileMapInfo2D info_{};
     /// Root node for tile map layer.
-    SharedPtr<Node> rootNode_;
+    WeakPtr<Node> rootNode_;
     /// Tile map layers.
     ea::vector<WeakPtr<TileMapLayer2D> > layers_;
 };

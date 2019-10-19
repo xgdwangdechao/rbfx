@@ -84,5 +84,5 @@ private:
     /// Process IK logic.
     void HandleSceneDrawableUpdateFinished(StringHash eventType, VariantMap& eventData);
     /// Camera node.
-    SharedPtr<Node> cameraRotateNode_;
+    WeakPtr<Node> cameraRotateNode_;
 };

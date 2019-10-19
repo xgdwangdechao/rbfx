@@ -47,8 +47,9 @@
 namespace Urho3D
 {
 
-Node::Node(Context* context) :
+Node::Node(Context* context, entt::entity entity) :
     Animatable(context),
+    entity_(entity),
     worldTransform_(Matrix3x4::IDENTITY),
     dirty_(false),
     enabled_(true),
@@ -78,8 +79,6 @@ Node::~Node()
 
 void Node::RegisterObject(Context* context)
 {
-    context->RegisterFactory<Node>();
-
     URHO3D_ACCESSOR_ATTRIBUTE("Is Enabled", IsEnabled, SetEnabled, bool, true, AM_DEFAULT);
     URHO3D_ACCESSOR_ATTRIBUTE("Name", GetName, SetName, ea::string, EMPTY_STRING, AM_DEFAULT);
     URHO3D_ACCESSOR_ATTRIBUTE("Tags", GetTags, SetTags, StringVector, Variant::emptyStringVector, AM_DEFAULT);
@@ -194,7 +193,7 @@ bool Node::Serialize(Archive& archive, ArchiveBlock& block, SceneResolver* resol
     // Serialize children
     const unsigned numChildrenToWrite = loading ? 0 : GetNumPersistentChildren();
     const bool childrenSerialized = SerializeCustomVector(archive, ArchiveBlockType::Array, "children", numChildrenToWrite, children_,
-        [&](unsigned /*index*/, SharedPtr<Node> child, bool loading)
+        [&](unsigned /*index*/, Node* child, bool loading)
     {
         assert(loading || child);
 
@@ -917,7 +916,7 @@ void Node::MarkDirty()
         auto i = cur->children_.begin();
         if (i != cur->children_.end())
         {
-            Node *next = i->Get();
+            Node *next = *i;
             for (++i; i != cur->children_.end(); ++i)
                 (*i)->MarkDirty();
             cur = next;
@@ -949,13 +948,16 @@ void Node::AddChild(Node* node, unsigned index)
         return;
 
     // Keep a shared ptr to the node while transferring
-    SharedPtr<Node> nodeShared(node);
     Node* oldParent = node->parent_;
     if (oldParent)
     {
         // If old parent is in different scene, perform the full removal
         if (oldParent->GetScene() != scene_)
+        {
+            // TODO(entt): Fix me
+            assert(0);
             oldParent->RemoveChild(node);
+        }
         else
         {
             if (scene_)
@@ -971,12 +973,12 @@ void Node::AddChild(Node* node, unsigned index)
                 scene_->SendEvent(E_NODEREMOVED, eventData);
             }
 
-            oldParent->children_.erase_first(nodeShared);
+            oldParent->children_.erase_first(node);
         }
     }
 
     // Add to the child vector, then add to the scene if not added yet
-    children_.insert_at(index, nodeShared);
+    children_.insert_at(index, node);
     if (scene_ && node->GetScene() != scene_)
         scene_->NodeAdded(node);
 
@@ -1009,7 +1011,7 @@ void Node::RemoveChild(Node* node)
 
     for (auto i = children_.begin(); i != children_.end(); ++i)
     {
-        if (i->Get() == node)
+        if (*i == node)
         {
             RemoveChild(i);
             return;
@@ -1219,6 +1221,16 @@ void Node::RemoveAllComponents()
     RemoveComponents(true, true);
 }
 
+void Node::ReorderChild(Node* child, unsigned index)
+{
+    if (!child || child->GetParent() != this)
+        return;
+
+    const unsigned oldIndex = children_.index_of(child);
+    children_.erase_at(oldIndex);
+    children_.insert_at(index, child);
+}
+
 void Node::ReorderComponent(Component* component, unsigned index)
 {
     if (!component || component->GetNode() != this)
@@ -1379,7 +1391,7 @@ void Node::GetChildren(ea::vector<Node*>& dest, bool recursive) const
     if (!recursive)
     {
         for (auto i = children_.begin(); i != children_.end(); ++i)
-            dest.push_back(i->Get());
+            dest.push_back(*i);
     }
     else
         GetChildrenRecursive(dest);
@@ -1401,7 +1413,7 @@ void Node::GetChildrenWithComponent(ea::vector<Node*>& dest, StringHash type, bo
         for (auto i = children_.begin(); i != children_.end(); ++i)
         {
             if ((*i)->HasComponent(type))
-                dest.push_back(i->Get());
+                dest.push_back(*i);
         }
     }
     else
@@ -1424,7 +1436,7 @@ void Node::GetChildrenWithTag(ea::vector<Node*>& dest, const ea::string& tag, bo
         for (auto i = children_.begin(); i != children_.end(); ++i)
         {
             if ((*i)->HasTag(tag))
-                dest.push_back(i->Get());
+                dest.push_back(*i);
         }
     }
     else
@@ -1458,7 +1470,7 @@ Node* Node::GetChild(StringHash nameHash, bool recursive) const
     for (auto i = children_.begin(); i != children_.end(); ++i)
     {
         if ((*i)->GetNameHash() == nameHash)
-            return i->Get();
+            return *i;
 
         if (recursive)
         {
@@ -1943,7 +1955,7 @@ void Node::MarkReplicationDirty()
 
 Node* Node::CreateChild(unsigned id, CreateMode mode, bool temporary)
 {
-    SharedPtr<Node> newNode(context_->CreateObject<Node>());
+    Node* newNode = scene_->CreateNodeInternal(entity_).second;
     newNode->SetTemporary(temporary);
 
     // If zero ID specified, or the ID is already taken, let the scene assign
@@ -1956,7 +1968,7 @@ Node* Node::CreateChild(unsigned id, CreateMode mode, bool temporary)
     else
         newNode->SetID(id);
 
-    AddChild(newNode.Get());
+    AddChild(newNode);
     return newNode;
 }
 
@@ -2247,12 +2259,9 @@ void Node::UpdateWorldTransform() const
     dirty_ = false;
 }
 
-void Node::RemoveChild(ea::vector<SharedPtr<Node> >::iterator i)
+void Node::RemoveChild(ea::vector<Node*>::iterator i)
 {
-    // Keep a shared pointer to the child about to be removed, to make sure the erase from container completes first. Otherwise
-    // it would be possible that other child nodes get removed as part of the node's components' cleanup, causing a re-entrant
-    // erase and a crash
-    SharedPtr<Node> child(*i);
+    Node* child = *i;
 
     // Send change event. Do not send when this node is already being destroyed
     if (Refs() > 0 && scene_)
@@ -2271,8 +2280,9 @@ void Node::RemoveChild(ea::vector<SharedPtr<Node> >::iterator i)
     child->MarkDirty();
     child->MarkNetworkUpdate();
     if (scene_)
-        scene_->NodeRemoved(child.Get());
+        scene_->NodeRemoved(child);
 
+    scene_->DestroyNodeInternal(child->entity_, child);
     children_.erase(i);
 }
 
@@ -2280,7 +2290,7 @@ void Node::GetChildrenRecursive(ea::vector<Node*>& dest) const
 {
     for (auto i = children_.begin(); i != children_.end(); ++i)
     {
-        Node* node = i->Get();
+        Node* node = *i;
         dest.push_back(node);
         if (!node->children_.empty())
             node->GetChildrenRecursive(dest);
@@ -2291,7 +2301,7 @@ void Node::GetChildrenWithComponentRecursive(ea::vector<Node*>& dest, StringHash
 {
     for (auto i = children_.begin(); i != children_.end(); ++i)
     {
-        Node* node = i->Get();
+        Node* node = *i;
         if (node->HasComponent(type))
             dest.push_back(node);
         if (!node->children_.empty())
@@ -2314,7 +2324,7 @@ void Node::GetChildrenWithTagRecursive(ea::vector<Node*>& dest, const ea::string
 {
     for (auto i = children_.begin(); i != children_.end(); ++i)
     {
-        Node* node = i->Get();
+        Node* node = *i;
         if (node->HasTag(tag))
             dest.push_back(node);
         if (!node->children_.empty())
@@ -2358,7 +2368,7 @@ Node* Node::CloneRecursive(Node* parent, SceneResolver& resolver, CreateMode mod
     // Clone child nodes recursively
     for (auto i = children_.begin(); i != children_.end(); ++i)
     {
-        Node* node = i->Get();
+        Node* node = *i;
         if (node->IsTemporary())
             continue;
 

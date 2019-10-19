@@ -400,9 +400,9 @@ void Renderer2D::GetDrawables(ea::vector<Drawable2D*>& drawables, Node* node)
             drawables.push_back(drawable);
     }
 
-    const ea::vector<SharedPtr<Node> >& children = node->GetChildren();
+    const ea::vector<Node*>& children = node->GetChildren();
     for (auto i = children.begin(); i != children.end(); ++i)
-        GetDrawables(drawables, i->Get());
+        GetDrawables(drawables, *i);
 }
 
 static inline bool CompareSourceBatch2Ds(const SourceBatch2D* lhs, const SourceBatch2D* rhs)

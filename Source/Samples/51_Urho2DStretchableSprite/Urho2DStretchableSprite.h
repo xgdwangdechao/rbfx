@@ -91,9 +91,9 @@ private:
     void ScaleSprites(float timeStep);
 
     /// Reference (static) sprite node.
-    SharedPtr<Node> refSpriteNode_;
+    WeakPtr<Node> refSpriteNode_;
     /// Stretchable sprite node.
-    SharedPtr<Node> stretchSpriteNode_;
+    WeakPtr<Node> stretchSpriteNode_;
     /// Transform mode tracking index.
     unsigned selectTransform_ = 0;
 };

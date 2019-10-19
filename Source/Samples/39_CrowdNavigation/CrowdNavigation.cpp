@@ -178,7 +178,7 @@ void CrowdNavigation::CreateScene()
 
     // Create the camera. Set far clip to match the fog. Note: now we actually create the camera node outside the scene, because
     // we want it to be unaffected by scene load / save
-    cameraNode_ = new Node(context_);
+    cameraNode_ = context_->GetDefaultScene()->CreateChild();
     auto* camera = cameraNode_->CreateComponent<Camera>();
     camera->SetFarClip(300.0f);
 
@@ -256,7 +256,7 @@ void CrowdNavigation::SubscribeToEvents()
 void CrowdNavigation::SpawnJack(const Vector3& pos, Node* jackGroup)
 {
     auto* cache = GetSubsystem<ResourceCache>();
-    SharedPtr<Node> jackNode(jackGroup->CreateChild("Jack"));
+    WeakPtr<Node> jackNode(jackGroup->CreateChild("Jack"));
     jackNode->SetPosition(pos);
     auto* modelObject = jackNode->CreateComponent<AnimatedModel>();
     modelObject->SetModel(cache->GetResource<Model>("Models/Jack.mdl"));
@@ -292,7 +292,7 @@ void CrowdNavigation::CreateMushroom(const Vector3& pos)
 
 void CrowdNavigation::CreateBoxOffMeshConnections(DynamicNavigationMesh* navMesh, Node* boxGroup)
 {
-    const ea::vector<SharedPtr<Node> >& boxes = boxGroup->GetChildren();
+    const ea::vector<Node*>& boxes = boxGroup->GetChildren();
     for (unsigned i=0; i < boxes.size(); ++i)
     {
         Node* box = boxes[i];

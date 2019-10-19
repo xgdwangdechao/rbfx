@@ -111,7 +111,7 @@ private:
     void HandlePostRenderUpdate(StringHash eventType, VariantMap& eventData);
 
     /// Rear-facing camera scene node.
-    SharedPtr<Node> rearCameraNode_;
+    WeakPtr<Node> rearCameraNode_;
     /// Flag for drawing debug geometry.
     bool drawDebug_;
 };

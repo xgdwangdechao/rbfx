@@ -32,6 +32,8 @@
 #include "../Scene/Node.h"
 #include "../Scene/SceneResolver.h"
 
+#include <entt/entity/registry.hpp>
+
 namespace Urho3D
 {
 
@@ -93,11 +95,17 @@ class URHO3D_API Scene : public Node
     using Node::SaveXML;
     using Node::SaveJSON;
 
+    friend class Node;
+
 public:
     /// Construct.
     explicit Scene(Context* context);
     /// Destruct.
     ~Scene() override;
+    /// Validate Scene integrity.
+    /// TODO(entt): Remove
+    void DebugValidateIntegrity();
+
     /// Register object factory. Node must be registered first.
     static void RegisterObject(Context* context);
 
@@ -265,6 +273,11 @@ public:
     void MarkReplicationDirty(Node* node);
 
 private:
+    /// Create entity.
+    ea::pair<entt::entity, Node*> CreateNodeInternal(entt::entity parentEntity);
+    /// Destroy entity.
+    void DestroyNodeInternal(entt::entity entity, Node* node);
+
     /// Handle the logic update event to update the scene, if active.
     void HandleUpdate(StringHash eventType, VariantMap& eventData);
     /// Handle a background loaded resource completing.
@@ -283,6 +296,11 @@ private:
     void PreloadResourcesXML(const XMLElement& element);
     /// Preload resources from a JSON scene or object prefab file.
     void PreloadResourcesJSON(const JSONValue& value);
+
+    /// Scene registry.
+    entt::registry reg_;
+    /// Root entity.
+    entt::entity rootEntity_{ entt::null };
 
     /// Replicated scene nodes by ID.
     ea::unordered_map<unsigned, Node*> replicatedNodes_;
