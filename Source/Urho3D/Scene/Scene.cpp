@@ -1214,11 +1214,16 @@ void Scene::MarkReplicationDirty(Node* node)
     }
 }
 
-ea::pair<entt::entity, Node*> Scene::CreateNodeInternal(entt::entity parentEntity)
+ea::pair<entt::entity, Node*> Scene::CreateNodeInternal(entt::entity parentEntity, Node* existingNode)
 {
     const entt::entity entity = reg_.create();
 
-    auto node = MakeShared<Node>(context_, entity);
+    // Create Node object
+    SharedPtr<Node> node{ existingNode };
+    if (!node)
+        node = MakeShared<Node>(context_, entity);
+
+    // Initialize internal components
     reg_.assign<SharedPtr<Node>>(entity, node);
 
     // TODO(entt): Remove
@@ -1242,6 +1247,31 @@ void Scene::DestroyNodeInternal(entt::entity entity, Node* node)
     SharedPtr<Node> sharedNode(node);
 
     reg_.destroy(entity);
+    node->entity_ = entt::null;
+}
+
+void Scene::TransferNodesInternal(Node* newParent, Node* child)
+{
+    // Collect all the nodes to transfer
+    nodesTempBuffer_.clear();
+    nodesTempBuffer_.push_back(child);
+    child->GetChildrenRecursive(nodesTempBuffer_);
+
+    // Initialize registry
+    const unsigned numNodes = nodesTempBuffer_.size();
+    entitiesTempBuffer_.resize(numNodes);
+    for (unsigned i = 0; i < numNodes; ++i)
+    {
+        const entt::entity newEntity = CreateNodeInternal(newParent->entity_, nodesTempBuffer_[i]).first;
+        entitiesTempBuffer_[i] = newEntity;
+    }
+
+    // Remove nodes from old scene
+    child->Remove();
+
+    // Assign new IDs
+    for (unsigned i = 0; i < numNodes; ++i)
+        nodesTempBuffer_[i]->entity_ = entitiesTempBuffer_[i];
 }
 
 void Scene::HandleUpdate(StringHash eventType, VariantMap& eventData)

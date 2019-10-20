@@ -273,10 +273,12 @@ public:
     void MarkReplicationDirty(Node* node);
 
 private:
-    /// Create entity.
-    ea::pair<entt::entity, Node*> CreateNodeInternal(entt::entity parentEntity);
-    /// Destroy entity.
+    /// Create node (internal).
+    ea::pair<entt::entity, Node*> CreateNodeInternal(entt::entity parentEntity, Node* existingNode = nullptr);
+    /// Destroy node (internal).
     void DestroyNodeInternal(entt::entity entity, Node* node);
+    /// Transfer nodes from another scene (internal).
+    void TransferNodesInternal(Node* newParent, Node* child);
 
     /// Handle the logic update event to update the scene, if active.
     void HandleUpdate(StringHash eventType, VariantMap& eventData);
@@ -301,6 +303,10 @@ private:
     entt::registry reg_;
     /// Root entity.
     entt::entity rootEntity_{ entt::null };
+    /// Temporary vector of nodes.
+    ea::vector<Node*> nodesTempBuffer_;
+    /// Temporary vector of entities.
+    ea::vector<entt::entity> entitiesTempBuffer_;
 
     /// Replicated scene nodes by ID.
     ea::unordered_map<unsigned, Node*> replicatedNodes_;

@@ -954,9 +954,7 @@ void Node::AddChild(Node* node, unsigned index)
         // If old parent is in different scene, perform the full removal
         if (oldParent->GetScene() != scene_)
         {
-            // TODO(entt): Fix me
-            assert(0);
-            oldParent->RemoveChild(node);
+            scene_->TransferNodesInternal(this, node);
         }
         else
         {
