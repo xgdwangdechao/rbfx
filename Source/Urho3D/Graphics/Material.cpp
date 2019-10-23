@@ -22,6 +22,7 @@
 
 #include "../Precompiled.h"
 
+#include <EASTL/set.h>
 #include <EASTL/sort.h>
 
 #include "../Core/Context.h"
@@ -121,10 +122,10 @@ static TechniqueEntry noEntry;
 
 bool CompareTechniqueEntries(const TechniqueEntry& lhs, const TechniqueEntry& rhs)
 {
-    if (lhs.lodDistance_ != rhs.lodDistance_)
-        return lhs.lodDistance_ > rhs.lodDistance_;
-    else
+    if (lhs.qualityLevel_ != rhs.qualityLevel_)
         return lhs.qualityLevel_ > rhs.qualityLevel_;
+
+    return lhs.lodDistance_ > rhs.lodDistance_;
 }
 
 TechniqueEntry::TechniqueEntry() noexcept :
@@ -395,8 +396,8 @@ bool Material::Load(const XMLElement& source)
         techniqueElem = techniqueElem.GetNext("technique");
     }
 
-    SortTechniques();
     ApplyShaderDefines();
+    CookTechniques();
 
     XMLElement textureElem = source.GetChild("texture");
     while (textureElem)
@@ -549,8 +550,8 @@ bool Material::Load(const JSONValue& source)
         }
     }
 
-    SortTechniques();
     ApplyShaderDefines();
+    CookTechniques();
 
     // Load textures
     JSONObject textureObject = source.Get("textures").GetObject();
@@ -892,6 +893,7 @@ void Material::SetTechnique(unsigned index, Technique* tech, MaterialQuality qua
 
     techniques_[index] = TechniqueEntry(tech, qualityLevel, lodDistance);
     ApplyShaderDefines(index);
+    CookTechniques();
 }
 
 void Material::SetVertexShaderDefines(const ea::string& defines)
@@ -900,6 +902,7 @@ void Material::SetVertexShaderDefines(const ea::string& defines)
     {
         vertexShaderDefines_ = defines;
         ApplyShaderDefines();
+        CookTechniques();
     }
 }
 
@@ -909,6 +912,7 @@ void Material::SetPixelShaderDefines(const ea::string& defines)
     {
         pixelShaderDefines_ = defines;
         ApplyShaderDefines();
+        CookTechniques();
     }
 }
 
@@ -1130,14 +1134,63 @@ SharedPtr<Material> Material::Clone(const ea::string& cloneName) const
     return ret;
 }
 
-void Material::SortTechniques()
+void Material::CookTechniques()
 {
-    ea::quick_sort(techniques_.begin(), techniques_.end(), CompareTechniqueEntries);
+    // Sort from high to low quality, then from far to close
+    auto sortedTechniques = techniques_;
+    ea::quick_sort(sortedTechniques.begin(), sortedTechniques.end(), CompareTechniqueEntries);
+
+    // Build material LOD groups
+    lodDistances_.clear();
+    lodDistances_.insert(0.0f);
+    for (const TechniqueEntry& entry : sortedTechniques)
+        lodDistances_.insert(entry.lodDistance_);
+
+    // Fill techniques
+    for (unsigned i = 0; i < static_cast<unsigned>(QUALITY_MAX); ++i)
+    {
+        const MaterialQuality materialQuality = static_cast<MaterialQuality>(i);
+
+        cookedTechniques_[i].clear();
+        cookedTechniques_[i].reserve(lodDistances_.size());
+        for (float lodDistance : lodDistances_)
+        {
+            // Fall back to latest technique
+            TechniqueEntry resultEntry = sortedTechniques.empty() ? TechniqueEntry{} : sortedTechniques.back();
+            for (const TechniqueEntry& entry : sortedTechniques)
+            {
+                Technique* tech = entry.technique_;
+                // Pick technique if it is close enough, and supported, and has at most the same quality
+                if (lodDistance >= entry.lodDistance_ && tech && tech->IsSupported() && materialQuality >= entry.qualityLevel_)
+                {
+                    resultEntry = entry;
+                    break;
+                }
+            }
+
+            cookedTechniques_[i].push_back(resultEntry);
+        }
+    }
 }
 
 void Material::MarkForAuxView(unsigned frameNumber)
 {
     auxViewFrameNumber_ = frameNumber;
+}
+
+unsigned Material::CalculateLodLevel(float distance) const
+{
+    unsigned lod = 0;
+    // While distance is greater or equal to next LOD distance, increment
+    while (lod + 1 < lodDistances_.size() && distance >= lodDistances_[lod + 1])
+        ++lod;
+    return lod;
+}
+
+Technique* Material::PickTechnique(unsigned lod, MaterialQuality quality) const
+{
+    const unsigned j = static_cast<MaterialQuality>(quality);
+    return lod < lodDistances_.size() ? cookedTechniques_[static_cast<MaterialQuality>(quality)][lod].technique_ : nullptr;
 }
 
 const TechniqueEntry& Material::GetTechniqueEntry(unsigned index) const
@@ -1326,15 +1379,14 @@ void Material::HandleAttributeAnimationUpdate(StringHash eventType, VariantMap& 
         SetShaderParameterAnimation(finishedNames[i], nullptr);
 }
 
+void Material::ApplyShaderDefines()
+{
+    for (unsigned i = 0; i < techniques_.size(); ++i)
+        ApplyShaderDefines(i);
+}
+
 void Material::ApplyShaderDefines(unsigned index)
 {
-    if (index == M_MAX_UNSIGNED)
-    {
-        for (unsigned i = 0; i < techniques_.size(); ++i)
-            ApplyShaderDefines(i);
-        return;
-    }
-
     if (index >= techniques_.size() || !techniques_[index].original_)
         return;
 

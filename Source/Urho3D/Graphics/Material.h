@@ -29,6 +29,8 @@
 #include "../Resource/Resource.h"
 #include "../Scene/ValueAnimationInfo.h"
 
+#include <EASTL/vector_set.h>
+
 namespace Urho3D
 {
 
@@ -229,8 +231,8 @@ public:
     void ReleaseShaders();
     /// Clone the material.
     SharedPtr<Material> Clone(const ea::string& cloneName = EMPTY_STRING) const;
-    /// Ensure that material techniques are listed in correct order.
-    void SortTechniques();
+    /// Cook techniques. Called automatically when material techniques are changed.
+    void CookTechniques();
     /// Mark material for auxiliary view rendering.
     void MarkForAuxView(unsigned frameNumber);
 
@@ -240,6 +242,10 @@ public:
     /// Return all techniques.
     const ea::vector<TechniqueEntry>& GetTechniques() const { return techniques_; }
 
+    /// Calculate material LOD level.
+    unsigned CalculateLodLevel(float distance) const;
+    /// Return technique by LOD level and material quality.
+    Technique* PickTechnique(unsigned lod, MaterialQuality quality) const;
     /// Return technique entry by index.
     const TechniqueEntry& GetTechniqueEntry(unsigned index) const;
     /// Return technique by index.
@@ -325,8 +331,10 @@ private:
     void RefreshShaderParameterHash();
     /// Recalculate the memory used by the material.
     void RefreshMemoryUse();
+    /// Reapply shader defines to all techniques.
+    void ApplyShaderDefines();
     /// Reapply shader defines to technique index. By default reapply all.
-    void ApplyShaderDefines(unsigned index = M_MAX_UNSIGNED);
+    void ApplyShaderDefines(unsigned index);
     /// Return shader parameter animation info.
     ShaderParameterAnimationInfo* GetShaderParameterAnimationInfo(const ea::string& name) const;
     /// Update whether should be subscribed to scene or global update events for shader parameter animation.
@@ -336,6 +344,10 @@ private:
 
     /// Techniques.
     ea::vector<TechniqueEntry> techniques_;
+    /// Cooked techniques.
+    ea::vector<TechniqueEntry> cookedTechniques_[static_cast<unsigned>(QUALITY_MAX)];
+    /// LOD distances.
+    ea::vector_set<float> lodDistances_;
     /// Textures.
     ea::unordered_map<TextureUnit, SharedPtr<Texture> > textures_;
     /// %Shader parameters.

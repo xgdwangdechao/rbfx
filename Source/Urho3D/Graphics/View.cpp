@@ -2823,33 +2823,9 @@ Technique* View::GetTechnique(Drawable* drawable, Material* material)
     if (!material)
         return renderer_->GetDefaultMaterial()->GetTechniques()[0].technique_;
 
-    const ea::vector<TechniqueEntry>& techniques = material->GetTechniques();
-    // If only one technique, no choice
-    if (techniques.size() == 1)
-        return techniques[0].technique_;
-    else
-    {
-        float lodDistance = drawable->GetLodDistance();
-
-        // Check for suitable technique. Techniques should be ordered like this:
-        // Most distant & highest quality
-        // Most distant & lowest quality
-        // Second most distant & highest quality
-        // ...
-        for (unsigned i = 0; i < techniques.size(); ++i)
-        {
-            const TechniqueEntry& entry = techniques[i];
-            Technique* tech = entry.technique_;
-
-            if (!tech || (!tech->IsSupported()) || materialQuality_ < entry.qualityLevel_)
-                continue;
-            if (lodDistance >= entry.lodDistance_)
-                return tech;
-        }
-
-        // If no suitable technique found, fallback to the last
-        return techniques.size() ? techniques.back().technique_ : nullptr;
-    }
+    const float lodDistance = drawable->GetLodDistance();
+    const unsigned materialLod = material->CalculateLodLevel(lodDistance);
+    return material->PickTechnique(materialLod, static_cast<MaterialQuality>(materialQuality_));
 }
 
 void View::CheckMaterialForAuxView(Material* material)
