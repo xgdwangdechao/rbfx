@@ -219,7 +219,7 @@ void DecalSet::UpdateBatches(const FrameInfo& frame)
     distance_ = frame.camera_->GetDistance(worldBoundingBox.Center());
 
     float scale = worldBoundingBox.Size().DotProduct(DOT_SCALE);
-    lodDistance_ = frame.camera_->GetLodDistance(distance_, scale, lodBias_);
+    UpdateLodDistance(frame.camera_->GetLodDistance(distance_, scale, lodBias_));
 
     batches_[0].distance_ = distance_;
     if (!skinned_)

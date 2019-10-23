@@ -143,9 +143,7 @@ void Drawable::UpdateBatches(const FrameInfo& frame)
 
     float scale = worldBoundingBox.Size().DotProduct(DOT_SCALE);
     float newLodDistance = frame.camera_->GetLodDistance(distance_, scale, lodBias_);
-
-    if (newLodDistance != lodDistance_)
-        lodDistance_ = newLodDistance;
+    UpdateLodDistance(newLodDistance);
 }
 
 Geometry* Drawable::GetLodGeometry(unsigned batchIndex, unsigned level)
@@ -415,6 +413,21 @@ void Drawable::RemoveFromOctree()
         OnRemoveFromOctree();
 
         octant_->RemoveDrawable(this);
+    }
+}
+
+void Drawable::CalculateMaterialLodLevels()
+{
+    for (SourceBatch& batch : batches_)
+        batch.materialLod_ = batch.material_ ? batch.material_->CalculateLodLevel(lodDistance_) : 0;
+}
+
+void Drawable::UpdateLodDistance(float newLodDistance)
+{
+    if (lodDistance_ != newLodDistance)
+    {
+        lodDistance_ = newLodDistance;
+        CalculateMaterialLodLevels();
     }
 }
 

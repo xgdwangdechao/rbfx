@@ -254,7 +254,7 @@ private:
     /// Find and set a new zone for a drawable when it has moved.
     void FindZone(Drawable* drawable);
     /// Return material technique, considering the drawable's LOD distance.
-    Technique* GetTechnique(Drawable* drawable, Material* material);
+    Technique* GetTechnique(Drawable* drawable, Material* material, unsigned materialLod);
     /// Check if material should render an auxiliary view (if it has a camera attached.)
     void CheckMaterialForAuxView(Material* material);
     /// Set shader defines for a batch queue if used.

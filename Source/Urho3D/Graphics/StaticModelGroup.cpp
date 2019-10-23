@@ -191,12 +191,7 @@ void StaticModelGroup::UpdateBatches(const FrameInfo& frame)
 
     float scale = worldBoundingBox.Size().DotProduct(DOT_SCALE);
     float newLodDistance = frame.camera_->GetLodDistance(distance_, scale, lodBias_);
-
-    if (newLodDistance != lodDistance_)
-    {
-        lodDistance_ = newLodDistance;
-        CalculateLodLevels();
-    }
+    UpdateLodDistance(newLodDistance);
 }
 
 unsigned StaticModelGroup::GetNumOccluderTriangles()

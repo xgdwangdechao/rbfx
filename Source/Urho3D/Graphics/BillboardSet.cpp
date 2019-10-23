@@ -211,7 +211,7 @@ void BillboardSet::UpdateBatches(const FrameInfo& frame)
     float scale = GetWorldBoundingBox().Size().DotProduct(DOT_SCALE);
     // If there are no billboards, the size becomes zero, and LOD'ed updates no longer happen. Disable LOD in that case
     if (scale > M_EPSILON)
-        lodDistance_ = frame.camera_->GetLodDistance(distance_, scale, lodBias_);
+        UpdateLodDistance(frame.camera_->GetLodDistance(distance_, scale, lodBias_));
     else
         lodDistance_ = 0.0f;
 

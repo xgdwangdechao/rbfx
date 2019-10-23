@@ -289,11 +289,7 @@ void AnimatedModel::UpdateBatches(const FrameInfo& frame)
     else
         animationLodDistance_ = Min(animationLodDistance_, newLodDistance);
 
-    if (newLodDistance != lodDistance_)
-    {
-        lodDistance_ = newLodDistance;
-        CalculateLodLevels();
-    }
+    UpdateLodDistance(newLodDistance);
 }
 
 void AnimatedModel::UpdateGeometry(const FrameInfo& frame)

@@ -112,6 +112,8 @@ protected:
     void ResetLodLevels();
     /// Choose LOD levels based on distance.
     void CalculateLodLevels();
+    /// Update LOD distance.
+    void UpdateLodDistance(float newLodDistance);
 
     /// Extra per-geometry data.
     ea::vector<StaticModelGeometryData> geometryData_;

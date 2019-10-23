@@ -121,7 +121,7 @@ void TerrainPatch::UpdateBatches(const FrameInfo& frame)
     distance_ = frame.camera_->GetDistance(GetWorldBoundingBox().Center());
 
     float scale = worldTransform.Scale().DotProduct(DOT_SCALE);
-    lodDistance_ = frame.camera_->GetLodDistance(distance_, scale, lodBias_);
+    UpdateLodDistance(frame.camera_->GetLodDistance(distance_, scale, lodBias_));
 
     batches_[0].distance_ = distance_;
     batches_[0].worldTransform_ = &worldTransform;

@@ -144,13 +144,8 @@ void StaticModel::UpdateBatches(const FrameInfo& frame)
     }
 
     float scale = worldBoundingBox.Size().DotProduct(DOT_SCALE);
-    float newLodDistance = frame.camera_->GetLodDistance(distance_, scale, lodBias_);
-
-    if (newLodDistance != lodDistance_)
-    {
-        lodDistance_ = newLodDistance;
-        CalculateLodLevels();
-    }
+    const float newLodDistance = frame.camera_->GetLodDistance(distance_, scale, lodBias_);
+    UpdateLodDistance(newLodDistance);
 }
 
 Geometry* StaticModel::GetLodGeometry(unsigned batchIndex, unsigned level)
@@ -441,6 +436,16 @@ void StaticModel::CalculateLodLevels()
             geometryData_[i].lodLevel_ = newLodLevel;
             batches_[i].geometry_ = batchGeometries[newLodLevel];
         }
+    }
+}
+
+void StaticModel::UpdateLodDistance(float newLodDistance)
+{
+    if (lodDistance_ != newLodDistance)
+    {
+        lodDistance_ = newLodDistance;
+        CalculateMaterialLodLevels();
+        CalculateLodLevels();
     }
 }
 

@@ -97,6 +97,8 @@ struct URHO3D_API SourceBatch
 
     /// Distance from camera.
     float distance_{};
+    /// Material LOD.
+    unsigned materialLod_{};
     /// Geometry.
     Geometry* geometry_{};
     /// Material.
@@ -342,6 +344,10 @@ protected:
     void AddToOctree();
     /// Remove from octree.
     void RemoveFromOctree();
+    /// Choose material LOD levels based on distance.
+    void CalculateMaterialLodLevels();
+    /// Update LOD distance.
+    void UpdateLodDistance(float newLodDistance);
 
     /// Move into another octree octant.
     void SetOctant(Octant* octant) { octant_ = octant; }

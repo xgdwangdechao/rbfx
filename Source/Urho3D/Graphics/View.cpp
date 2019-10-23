@@ -1102,7 +1102,7 @@ void View::GetLightBatches()
                         {
                             const SourceBatch& srcBatch = batches[l];
 
-                            Technique* tech = GetTechnique(drawable, srcBatch.material_);
+                            Technique* tech = GetTechnique(drawable, srcBatch.material_, srcBatch.materialLod_);
                             if (!srcBatch.geometry_ || !srcBatch.numWorldTransforms_ || !tech)
                                 continue;
 
@@ -1216,7 +1216,7 @@ void View::GetBaseBatches()
             if (srcBatch.material_ && srcBatch.material_->GetAuxViewFrameNumber() != frame_.frameNumber_ && !renderTarget_)
                 CheckMaterialForAuxView(srcBatch.material_);
 
-            Technique* tech = GetTechnique(drawable, srcBatch.material_);
+            Technique* tech = GetTechnique(drawable, srcBatch.material_, srcBatch.materialLod_);
             if (!srcBatch.geometry_ || !srcBatch.numWorldTransforms_ || !tech)
                 continue;
 
@@ -1395,7 +1395,7 @@ void View::GetLitBatches(Drawable* drawable, LightBatchQueue& lightQueue, BatchQ
     {
         const SourceBatch& srcBatch = batches[i];
 
-        Technique* tech = GetTechnique(drawable, srcBatch.material_);
+        Technique* tech = GetTechnique(drawable, srcBatch.material_, srcBatch.materialLod_);
         if (!srcBatch.geometry_ || !srcBatch.numWorldTransforms_ || !tech)
             continue;
 
@@ -2818,13 +2818,11 @@ void View::FindZone(Drawable* drawable)
     drawable->SetZone(newZone, temporary);
 }
 
-Technique* View::GetTechnique(Drawable* drawable, Material* material)
+Technique* View::GetTechnique(Drawable* drawable, Material* material, unsigned materialLod)
 {
     if (!material)
         return renderer_->GetDefaultMaterial()->GetTechniques()[0].technique_;
 
-    const float lodDistance = drawable->GetLodDistance();
-    const unsigned materialLod = material->CalculateLodLevel(lodDistance);
     return material->PickTechnique(materialLod, static_cast<MaterialQuality>(materialQuality_));
 }
 
