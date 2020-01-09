@@ -165,6 +165,7 @@ macro(spirv_cross_add_library name config_name library_type)
 		install(TARGETS ${name}
 			EXPORT ${config_name}Config
 			RUNTIME DESTINATION bin
+			BUNDLE DESTINATION bin
 			LIBRARY DESTINATION lib
 			ARCHIVE DESTINATION lib
 			PUBLIC_HEADER DESTINATION include/spirv_cross)
@@ -420,7 +421,7 @@ if (SPIRV_CROSS_CLI)
 	target_compile_definitions(spirv-cross PRIVATE ${spirv-compiler-defines} HAVE_SPIRV_CROSS_GIT_VERSION)
 	set_target_properties(spirv-cross PROPERTIES LINK_FLAGS "${spirv-cross-link-flags}")
 	if (NOT SPIRV_CROSS_SKIP_INSTALL)
-		install(TARGETS spirv-cross RUNTIME DESTINATION bin)
+		install(TARGETS spirv-cross RUNTIME DESTINATION bin BUNDLE DESTINATION bin)
 	endif()
 	target_link_libraries(spirv-cross PRIVATE
 			spirv-cross-glsl
