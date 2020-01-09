@@ -25,6 +25,7 @@
 #include "../../Graphics/Graphics.h"
 #include "../../Graphics/GraphicsImpl.h"
 #include "../../Graphics/Shader.h"
+#include "../../Graphics/ShaderConverter.h"
 #include "../../Graphics/ShaderProgram.h"
 #include "../../Graphics/ShaderVariation.h"
 #include "../../IO/Log.h"
@@ -178,6 +179,38 @@ bool ShaderVariation::Create()
         shaderCode += originalShaderCode;
 
     const char* shaderCStr = shaderCode.c_str();
+
+    if (type_ == VS)
+    {
+        std::string inputString =
+"#version 450\n"
+"uniform vs_params {\n"
+"    mat4 model;\n"
+"    mat4 view_proj;\n"
+"    vec3 eye_pos;\n"
+"};\n"
+"\n"
+"layout(location=0) in vec4 position;\n"
+"layout(location=1) in vec3 normal;\n"
+"layout(location=2) in vec2 texcoord;\n"
+"\n"
+"out vec3 v_pos;\n"
+"out vec3 v_nrm;\n"
+"out vec2 v_uv;\n"
+"out vec3 v_eye_pos;\n"
+"\n"
+"void main() {\n"
+"    vec4 pos = model * position;\n"
+"    v_pos = pos.xyz / pos.w;\n"
+"    v_nrm = (model * vec4(normal, 0.0)).xyz;\n"
+"    v_uv = texcoord;\n"
+"    v_eye_pos = eye_pos;\n"
+"    gl_Position = view_proj * pos;\n"
+"}";
+        std::string magicString = DoMagic(inputString);
+        URHO3D_LOGINFO("{}", magicString.c_str());
+    }
+
     glShaderSource(object_.name_, 1, &shaderCStr, nullptr);
     glCompileShader(object_.name_);
 

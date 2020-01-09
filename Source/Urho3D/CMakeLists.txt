@@ -174,6 +174,7 @@ set (THIRD_PARTY_DEPENDENCIES
     entt
     ETCPACK
     glslang
+    SPIRV
     spirv-cross-core
     spirv-cross-glsl
     spirv-cross-msl
