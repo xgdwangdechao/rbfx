@@ -135,7 +135,7 @@ _option(URHO3D_NO_EDITOR_PLAYER_EXE "Do not build editor or player executables."
 _option(URHO3D_CONTAINER_ADAPTERS "Enable EASTL-to-Urho container adapters for easier porting of legacy code." OFF)
 
 # Graphics
-_option(URHO3D_MOBILE_GRAPHICS    "Force use of mobile graphics profile."                 OFF)
+_option(URHO3D_MOBILE_GRAPHICS    "Force use of mobile graphics profile."                 ON)
 if (WIN32)
     set(URHO3D_GRAPHICS_API D3D11 CACHE STRING "Graphics API")
     set_property(CACHE URHO3D_GRAPHICS_API PROPERTY STRINGS D3D9 D3D11 OpenGL)
