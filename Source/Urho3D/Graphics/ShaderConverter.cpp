@@ -211,6 +211,7 @@ ea::string ShaderCache::GetShaderSource(const ea::string& shaderName,
     shaderSource += "#extension GL_GOOGLE_include_directive : require\n";
 
     shaderSource += "#define GL3\n";
+    shaderSource += "#define USE_CBUFFERS\n";
     if (shaderType == VS)
         shaderSource += "#define COMPILEVS\n";
     else if (shaderType == PS)

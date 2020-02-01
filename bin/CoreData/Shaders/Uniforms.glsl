@@ -95,13 +95,13 @@ uniform vec2 cVSMShadowParams;
 
 #ifdef COMPILEVS
 
-uniform FrameVS
+layout(binding=0) uniform FrameVS
 {
     float cDeltaTime;
     float cElapsedTime;
 };
 
-uniform CameraVS
+layout(binding=1) uniform CameraVS
 {
     vec3 cCameraPos;
     float cNearClip;
@@ -115,14 +115,14 @@ uniform CameraVS
     vec4 cClipPlane;
 };
 
-uniform ZoneVS
+layout(binding=2) uniform ZoneVS
 {
     vec3 cAmbientStartColor;
     vec3 cAmbientEndColor;
     mat4 cZone;
 };
 
-uniform LightVS
+layout(binding=3) uniform LightVS
 {
     vec4 cLightPos;
     vec3 cLightDir;
@@ -135,14 +135,14 @@ uniform LightVS
 };
 
 #ifndef CUSTOM_MATERIAL_CBUFFER
-uniform MaterialVS
+layout(binding=4) uniform MaterialVS
 {
     vec4 cUOffset;
     vec4 cVOffset;
 };
 #endif
 
-uniform ObjectVS
+layout(binding=5) uniform ObjectVS
 {
     mat4 cModel;
 #ifdef BILLBOARD
@@ -158,13 +158,13 @@ uniform ObjectVS
 #ifdef COMPILEPS
 
 // Pixel shader uniforms
-uniform FramePS
+layout(binding=0) uniform FramePS
 {
     float cDeltaTimePS;
     float cElapsedTimePS;
 };
 
-uniform CameraPS
+layout(binding=1) uniform CameraPS
 {
     vec3 cCameraPosPS;
     vec4 cDepthReconstruct;
@@ -173,7 +173,7 @@ uniform CameraPS
     float cFarClipPS;
 };
 
-uniform ZonePS
+layout(binding=2) uniform ZonePS
 {
     vec4 cAmbientColor;
     vec4 cFogParams;
@@ -182,7 +182,7 @@ uniform ZonePS
     vec3 cZoneMax;
 };
 
-uniform LightPS
+layout(binding=3) uniform LightPS
 {
     vec4 cLightColor;
     vec4 cLightPosPS;
@@ -204,7 +204,7 @@ uniform LightPS
 };
 
 #ifndef CUSTOM_MATERIAL_CBUFFER
-uniform MaterialPS
+layout(binding=4) uniform MaterialPS
 {
     vec4 cMatDiffColor;
     vec3 cMatEmissiveColor;
