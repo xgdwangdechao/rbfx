@@ -23,6 +23,8 @@
 #include "../Precompiled.h"
 
 #include "../Graphics/ShaderConverter.h"
+#include "../Graphics/Graphics.h"
+#include "../Resource/ResourceCache.h"
 
 #include <glslang/Public/ShaderLang.h>
 #include <StandAlone/ResourceLimits.h>
@@ -38,77 +40,142 @@ namespace Urho3D
 // Thank you Andre Weissflog aka floooh for this awesome code
 namespace
 {
-    struct Guardian
+
+struct ShaderIncludeData
+{
+    ea::string sourceCode_;
+};
+
+struct ShaderIncludeResult : ShaderIncludeData, glslang::TShader::Includer::IncludeResult
+{
+    ShaderIncludeResult(const ea::string& headerName, const ea::string& sourceCode)
+        : ShaderIncludeData{ sourceCode }
+        , IncludeResult(headerName.c_str(), sourceCode_.c_str(), sourceCode_.size(), nullptr)
     {
-        Guardian() { glslang::InitializeProcess(); }
-        ~Guardian() { glslang::FinalizeProcess(); }
-    };
-
-    static const Guardian gua;
-
-    bool compile(EShLanguage stage, const std::string& src, int snippet_index, std::vector<unsigned>& bytecode)
-    {
-        const char* sources[1] = { src.c_str() };
-
-        // compile GLSL vertex- or fragment-shader
-        glslang::TShader shader(stage);
-        // FIXME: add custom defines here: compiler.addProcess(...)
-        shader.setStrings(sources, 1);
-        shader.setEnvInput(glslang::EShSourceGlsl, stage, glslang::EShClientOpenGL, 100/*???*/);
-        shader.setEnvClient(glslang::EShClientOpenGL, glslang::EShTargetOpenGL_450);
-        shader.setEnvTarget(glslang::EshTargetSpv, glslang::EShTargetSpv_1_0);
-        // Do NOT call setAutoMapBinding(true) here, this will throw uniform blocks and
-        // image bindings into the same "pool", while sokol-gfx needs those separated.
-        // Bind slot decorations will be added before the SPIRV-Cross pass.
-        shader.setAutoMapLocations(true);
-        bool parse_success = shader.parse(&glslang::DefaultTBuiltInResource, 100, false, EShMsgDefault);
-        //infolog_to_errors(shader.getInfoLog(), inp, snippet_index, spirv.errors);
-        //infolog_to_errors(shader.getInfoDebugLog(), inp, snippet_index, spirv.errors);
-        if (!parse_success) {
-            return false;
-        }
-
-        // "link" into a program
-        glslang::TProgram program;
-        program.addShader(&shader);
-        bool link_success = program.link(EShMsgDefault);
-        //infolog_to_errors(program.getInfoLog(), inp, snippet_index, spirv.errors);
-        //infolog_to_errors(program.getInfoDebugLog(), inp, snippet_index, spirv.errors);
-        if (!link_success) {
-            return false;
-        }
-        bool map_success = program.mapIO();
-        //infolog_to_errors(program.getInfoLog(), inp, snippet_index, spirv.errors);
-        //infolog_to_errors(program.getInfoDebugLog(), inp, snippet_index, spirv.errors);
-        if (!map_success) {
-            return false;
-        }
-
-        // translate intermediate representation to SPIRV
-        const glslang::TIntermediate* im = program.getIntermediate(stage);
-        assert(im);
-        spv::SpvBuildLogger spv_logger;
-        glslang::SpvOptions spv_options;
-        // generateDebugInfo emits SPIRV OpLine statements
-        spv_options.generateDebugInfo = true;
-        // disable the optimizer passes, we'll run our own after the translation
-        spv_options.disableOptimizer = true;
-        spv_options.optimizeSize = false;
-        //spirv.blobs.push_back(spirv_blob_t(snippet_index));
-        glslang::GlslangToSpv(*im, bytecode, &spv_logger, &spv_options);
-        std::string spirv_log = spv_logger.getAllMessages();
-        if (!spirv_log.empty()) {
-            // FIXME: need to parse string for errors and translate to errmsg_t objects?
-            // haven't seen a case yet where this generates log messages
-            //fmt::print(spirv_log);
-        }
-        // run optimizer passes
-        //spirv_optimize(spirv.blobs.back().bytecode);
-        return true;
     }
+};
+
+class ShaderIncluder : public glslang::TShader::Includer
+{
+public:
+    ShaderIncluder(ResourceCache* cache) : cache_(cache) {}
+
+    virtual IncludeResult* includeLocal(const char* headerName,
+                                        const char* /*includerName*/,
+                                        size_t /*inclusionDepth*/)
+    {
+        auto file = cache_->GetFile(ea::string("Shaders/") + headerName);
+        if (!file)
+            return nullptr;
+
+        ea::string sourceText = file->ReadText();
+        return new ShaderIncludeResult(file->GetName(), sourceText);
+    }
+
+    virtual void releaseInclude(IncludeResult* result)
+    {
+        delete static_cast<ShaderIncludeResult*>(result);
+    }
+
+private:
+    ResourceCache* cache_{};
+};
+
+struct Guardian
+{
+    Guardian() { glslang::InitializeProcess(); }
+    ~Guardian() { glslang::FinalizeProcess(); }
+};
+
+static const Guardian gua;
+
+bool compile(ShaderIncluder& includer, EShLanguage stage, const ea::string& src, int snippet_index, std::vector<unsigned>& bytecode)
+{
+    const char* sources[1] = { src.c_str() };
+
+    // compile GLSL vertex- or fragment-shader
+    glslang::TShader shader(stage);
+    // FIXME: add custom defines here: compiler.addProcess(...)
+    shader.setStrings(sources, 1);
+    shader.setEnvInput(glslang::EShSourceGlsl, stage, glslang::EShClientOpenGL, 100/*???*/);
+    shader.setEnvClient(glslang::EShClientOpenGL, glslang::EShTargetOpenGL_450);
+    shader.setEnvTarget(glslang::EshTargetSpv, glslang::EShTargetSpv_1_0);
+    // Do NOT call setAutoMapBinding(true) here, this will throw uniform blocks and
+    // image bindings into the same "pool", while sokol-gfx needs those separated.
+    // Bind slot decorations will be added before the SPIRV-Cross pass.
+    shader.setAutoMapLocations(true);
+    bool parse_success = shader.parse(&glslang::DefaultTBuiltInResource, 100, false, EShMsgDefault, includer);
+    //infolog_to_errors(shader.getInfoLog(), inp, snippet_index, spirv.errors);
+    //infolog_to_errors(shader.getInfoDebugLog(), inp, snippet_index, spirv.errors);
+    if (!parse_success) {
+        return false;
+    }
+
+    // "link" into a program
+    glslang::TProgram program;
+    program.addShader(&shader);
+    bool link_success = program.link(EShMsgDefault);
+    //infolog_to_errors(program.getInfoLog(), inp, snippet_index, spirv.errors);
+    //infolog_to_errors(program.getInfoDebugLog(), inp, snippet_index, spirv.errors);
+    if (!link_success) {
+        return false;
+    }
+    bool map_success = program.mapIO();
+    //infolog_to_errors(program.getInfoLog(), inp, snippet_index, spirv.errors);
+    //infolog_to_errors(program.getInfoDebugLog(), inp, snippet_index, spirv.errors);
+    if (!map_success) {
+        return false;
+    }
+
+    // translate intermediate representation to SPIRV
+    const glslang::TIntermediate* im = program.getIntermediate(stage);
+    assert(im);
+    spv::SpvBuildLogger spv_logger;
+    glslang::SpvOptions spv_options;
+    // generateDebugInfo emits SPIRV OpLine statements
+    spv_options.generateDebugInfo = true;
+    // disable the optimizer passes, we'll run our own after the translation
+    spv_options.disableOptimizer = true;
+    spv_options.optimizeSize = false;
+    //spirv.blobs.push_back(spirv_blob_t(snippet_index));
+    glslang::GlslangToSpv(*im, bytecode, &spv_logger, &spv_options);
+    std::string spirv_log = spv_logger.getAllMessages();
+    if (!spirv_log.empty()) {
+        // FIXME: need to parse string for errors and translate to errmsg_t objects?
+        // haven't seen a case yet where this generates log messages
+        //fmt::print(spirv_log);
+    }
+    // run optimizer passes
+    //spirv_optimize(spirv.blobs.back().bytecode);
+    return true;
 }
 
-std::string to_hlsl5(const std::vector<unsigned>& bytecode, uint32_t opt_mask)
+static ea::string to_glsl(const std::vector<unsigned>& bytecode, int glsl_version, bool is_gles, uint32_t opt_mask)
+{
+    spirv_cross::CompilerGLSL compiler(bytecode);
+    spirv_cross::CompilerGLSL::Options options;
+    options.emit_line_directives = false;
+    options.version = glsl_version;
+    options.es = is_gles;
+    options.enable_420pack_extension = false;
+    options.vertex.fixup_clipspace = false;//(0 != (opt_mask & option_t::FIXUP_CLIPSPACE));
+    options.vertex.flip_vert_y = false;//(0 != (opt_mask & option_t::FLIP_VERT_Y));
+    compiler.set_common_options(options);
+    //fix_bind_slots(compiler);
+    //fix_ub_matrix_force_colmajor(compiler);
+    //flatten_uniform_blocks(compiler);
+    std::string src = compiler.compile();
+    /*spirvcross_source_t res;
+    if (!src.empty()) {
+        res.valid = true;
+        res.source_code = std::move(src);
+        res.refl = parse_reflection(compiler);
+    }
+    return res;*/
+    return src.c_str();
+}
+
+ea::string to_hlsl5(const std::vector<unsigned>& bytecode, uint32_t opt_mask)
 {
     spirv_cross::CompilerHLSL compiler(bytecode);
     spirv_cross::CompilerGLSL::Options commonOptions;
@@ -129,21 +196,43 @@ std::string to_hlsl5(const std::vector<unsigned>& bytecode, uint32_t opt_mask)
         res.source_code = std::move(src);
         res.refl = parse_reflection(compiler);
     }*/
-    return src;
+    return src.c_str();
 }
 
-std::string DoMagic(std::string strcat)
-{
-    std::vector<unsigned> bytecode;
-    if (!compile(EShLangVertex, strcat, 0, bytecode))
-        return {};
-
-    return to_hlsl5(bytecode, 0);
 }
 
-ea::string ShaderCache::GetShaderSource(const ea::string& resourceName,
+ea::string ShaderCache::GetShaderSource(const ea::string& shaderName,
     ShaderType shaderType, ShaderVersion shaderVersion, const ShaderDefinesVector& shaderDefines)
 {
+    ShaderIncluder includer(context_->GetCache());
+
+    ea::string shaderSource;
+    shaderSource += "#version 450\n";
+    shaderSource += "#extension GL_GOOGLE_include_directive : require\n";
+
+    shaderSource += "#define GL3\n";
+    if (shaderType == VS)
+        shaderSource += "#define COMPILEVS\n";
+    else if (shaderType == PS)
+        shaderSource += "#define COMPILEPS\n";
+
+    #ifdef MOBILE_GRAPHICS
+        shaderSource += "#define MOBILE_GRAPHICS\n";
+    #else
+        shaderSource += "#define DESKTOP_GRAPHICS\n";
+    #endif
+
+    shaderSource += "#define MAXBONES " + ea::to_string(Graphics::GetMaxBones()) + "\n";
+    shaderSource += "#include \"" + shaderName + ".glsl\"\n";
+
+    std::vector<unsigned> bytecode;
+    if (!compile(includer, EShLangVertex, shaderSource, 0, bytecode))
+        return {};
+
+    const ea::string hlslSource = to_hlsl5(bytecode, 0);
+    const ea::string glslSource = to_glsl(bytecode, 150, false, 0);
+    const ea::string glslesSource = to_glsl(bytecode, 100, true, 0);
+
     return EMPTY_STRING;
 }
 

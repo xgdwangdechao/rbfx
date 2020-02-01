@@ -61,7 +61,7 @@ public:
     }
 
     /// Return shader source.
-    ea::string GetShaderSource(const ea::string& resourceName,
+    ea::string GetShaderSource(const ea::string& shaderName,
         ShaderType shaderType, ShaderVersion shaderVersion, const ShaderDefinesVector& shaderDefines);
 
 };

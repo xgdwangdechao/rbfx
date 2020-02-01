@@ -28,6 +28,7 @@
 #include "../../Graphics/ShaderConverter.h"
 #include "../../Graphics/ShaderProgram.h"
 #include "../../Graphics/ShaderVariation.h"
+#include "../../IO/FileSystem.h"
 #include "../../IO/Log.h"
 
 #include "../../DebugNew.h"
@@ -180,18 +181,14 @@ bool ShaderVariation::Create()
 
     {
         ShaderCache cache(owner_->GetContext());
-        const ea::string resourceName = owner_->GetName().replaced("/GLSL/", "/");
+        const ea::string resourceName = GetFileName(owner_->GetName());
         ShaderDefinesVector defines;
     #ifdef MOBILE_GRAPHICS
         const ShaderVersion shaderVersion = Graphics::GetGL3Support() ? ShaderVersion::GLES3 : ShaderVersion::GLES2;
-        defines.push_back({ "MOBILE_GRAPHICS" });
     #else
         const ShaderVersion shaderVersion = Graphics::GetGL3Support() ? ShaderVersion::GL3 : ShaderVersion::GL2;
-        defines.push_back({ "DESKTOP_GRAPHICS" });
     #endif
 
-        defines.push_back({ type_ == VS ? "COMPILEVS" : "COMPILEPS" });
-        defines.push_back({ "MAXBONES", ea::to_string(Graphics::GetMaxBones()) });
         for (const ea::string& name : defineVec)
             defines.push_back({ name });
 
