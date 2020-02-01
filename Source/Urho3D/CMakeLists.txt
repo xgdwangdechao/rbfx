@@ -173,6 +173,12 @@ set (THIRD_PARTY_DEPENDENCIES
     EASTL
     entt
     ETCPACK
+    glslang
+    SPIRV
+    spirv-cross-core
+    spirv-cross-glsl
+    spirv-cross-msl
+    spirv-cross-hlsl
 )
 
 if (URHO3D_MERGE_STATIC_LIBS)

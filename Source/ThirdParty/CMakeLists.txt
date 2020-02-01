@@ -44,6 +44,16 @@ add_subdirectory(ETCPACK)
 if (NOT MINI_URHO)
     add_subdirectory(FreeType)
 
+    set (ENABLE_HLSL OFF CACHE BOOL "")
+    set (ENABLE_CTEST OFF CACHE BOOL "")
+    set (ENABLE_GLSLANG_BINARIES OFF CACHE BOOL "")
+    set (SKIP_GLSLANG_INSTALL ON CACHE BOOL "")
+    add_subdirectory(glslang)
+
+    set (SPIRV_CROSS_ENABLE_TESTS OFF CACHE BOOL "")
+    set (SPIRV_CROSS_SKIP_INSTALL ON CACHE BOOL "")
+    add_subdirectory(SPIRV-Cross)
+
     if (URHO3D_SYSTEMUI)
         add_subdirectory(imgui)
     endif ()

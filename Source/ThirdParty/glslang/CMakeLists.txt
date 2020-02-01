@@ -21,7 +21,7 @@ option(BUILD_EXTERNAL "Build external dependencies in /External" ON)
 set(LIB_TYPE STATIC)
 
 if(BUILD_SHARED_LIBS)
-    set(LIB_TYPE SHARED)
+    #set(LIB_TYPE SHARED)
 endif()
 
 option(SKIP_GLSLANG_INSTALL "Skip installation" ${SKIP_GLSLANG_INSTALL})
@@ -85,10 +85,10 @@ if(ENABLE_GLSLANG_WEB)
 endif(ENABLE_GLSLANG_WEB)
 
 if(WIN32)
-    set(CMAKE_DEBUG_POSTFIX "d")
-    if(MSVC)
-        include(ChooseMSVCCRT.cmake)
-    endif(MSVC)
+    #set(CMAKE_DEBUG_POSTFIX "d")
+    #if(MSVC)
+    #    include(ChooseMSVCCRT.cmake)
+    #endif(MSVC)
     add_definitions(-DGLSLANG_OSINCLUDE_WIN32)
 elseif(UNIX)
     add_definitions(-DGLSLANG_OSINCLUDE_UNIX)
@@ -215,3 +215,6 @@ if(BUILD_TESTING)
         COMMAND bash ${IGNORE_CR_FLAG} runtests ${RESULTS_PATH} ${VALIDATOR_PATH} ${REMAP_PATH}
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/Test/)
 endif(BUILD_TESTING)
+target_include_directories(glslang PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+)

@@ -7,7 +7,7 @@ else(WIN32)
 endif(WIN32)
 
 if(EMSCRIPTEN OR ENABLE_GLSLANG_WEB)
-    add_subdirectory(OSDependent/Web)
+    #add_subdirectory(OSDependent/Web)
 endif(EMSCRIPTEN OR ENABLE_GLSLANG_WEB)
 
 set(SOURCES
@@ -85,9 +85,7 @@ add_library(glslang ${LIB_TYPE} ${BISON_GLSLParser_OUTPUT_SOURCE} ${SOURCES} ${H
 set_property(TARGET glslang PROPERTY FOLDER glslang)
 set_property(TARGET glslang PROPERTY POSITION_INDEPENDENT_CODE ON)
 target_link_libraries(glslang OGLCompiler OSDependent)
-target_include_directories(glslang PUBLIC 
-	$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/..>
-	$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
+target_include_directories(glslang PRIVATE ..)
 
 if(WIN32 AND BUILD_SHARED_LIBS)
     set_target_properties(glslang PROPERTIES PREFIX "")
@@ -124,3 +122,7 @@ if(ENABLE_GLSLANG_INSTALL)
         install(FILES ${file} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/glslang/${dir})
     endforeach()
 endif(ENABLE_GLSLANG_INSTALL)
+
+if (NOT URHO3D_MERGE_STATIC_LIBS)
+    install(TARGETS glslang EXPORT Urho3D ARCHIVE DESTINATION ${DEST_ARCHIVE_DIR})
+endif ()
