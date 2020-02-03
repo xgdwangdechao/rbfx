@@ -97,7 +97,7 @@ void Packager::Start()
         return;
     }
 
-    context_->GetWorkQueue()->AddWorkItem([this]() { WritePackage(); });
+    context_->GetWorkQueue()->AddWorkItem([this](unsigned /*threadIndex*/) { WritePackage(); });
 }
 
 void Packager::WritePackage()
