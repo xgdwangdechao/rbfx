@@ -36,6 +36,7 @@ class RenderPath;
 class Scene;
 class XMLFile;
 class View;
+class CustomView;
 
 /// %Viewport definition either for a render surface or the backbuffer.
 class URHO3D_API Viewport : public Object
@@ -77,6 +78,9 @@ public:
     /// Return the internal rendering structure. May be null if the viewport has not been rendered yet.
     View* GetView() const;
 
+    /// Return custom view.
+    CustomView* GetCustomView() const { return customView_; }
+
     /// Return view rectangle. A zero rectangle (0 0 0 0) means to use the rendertarget's full dimensions. In this case you could fetch the actual view rectangle from View object, though it will be valid only after the first frame.
     const IntRect& GetRect() const { return rect_; }
 
@@ -112,6 +116,8 @@ private:
     SharedPtr<RenderPath> renderPath_;
     /// Internal rendering structure.
     SharedPtr<View> view_;
+    /// Internal custom renderer.
+    SharedPtr<CustomView> customView_;
     /// Debug draw flag.
     bool drawDebug_;
 };

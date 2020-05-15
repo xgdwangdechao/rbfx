@@ -295,6 +295,7 @@ void SamplesManager::Start()
     RegisterSample<BakedLighting>();
 #endif
 
+    startSample_ = "StaticScene";
     if (!startSample_.empty())
         StartSample(startSample_);
 }
