@@ -29,6 +29,7 @@
 #include <Urho3D/Graphics/Octree.h>
 #include <Urho3D/Graphics/Renderer.h>
 #include <Urho3D/Graphics/StaticModel.h>
+#include <Urho3D/Graphics/CustomView.h>
 #include <Urho3D/Input/Input.h>
 #include <Urho3D/Resource/ResourceCache.h>
 #include <Urho3D/Scene/Scene.h>
@@ -147,6 +148,7 @@ void StaticScene::SetupViewport()
     // at minimum. Additionally we could configure the viewport screen size and the rendering path (eg. forward / deferred) to
     // use, but now we just use full screen and default render path configured in the engine command line options
     SharedPtr<Viewport> viewport(new Viewport(context_, scene_, cameraNode_->GetComponent<Camera>()));
+    viewport->SetCustomViewport(MakeShared<CustomViewportScript>(context_));
     renderer->SetViewport(0, viewport);
 }
 

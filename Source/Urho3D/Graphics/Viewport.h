@@ -37,6 +37,7 @@ class Scene;
 class XMLFile;
 class View;
 class CustomView;
+class CustomViewportScript;
 
 /// %Viewport definition either for a render surface or the backbuffer.
 class URHO3D_API Viewport : public Object
@@ -56,6 +57,8 @@ public:
     /// Register object with the engine.
     static void RegisterObject(Context* context);
 
+    /// Set custom viewport.
+    void SetCustomViewport(CustomViewportScript* script);
     /// Set scene.
     void SetScene(Scene* scene);
     /// Set viewport camera.
@@ -116,6 +119,8 @@ private:
     SharedPtr<RenderPath> renderPath_;
     /// Internal rendering structure.
     SharedPtr<View> view_;
+    /// Custom viewport script.
+    SharedPtr<CustomViewportScript> customViewportScript_;
     /// Internal custom renderer.
     SharedPtr<CustomView> customView_;
     /// Debug draw flag.

@@ -23,6 +23,7 @@
 #include <Urho3D/Core/CoreEvents.h>
 #include <Urho3D/Engine/Engine.h>
 #include <Urho3D/Graphics/Camera.h>
+#include <Urho3D/Graphics/CustomView.h>
 #include <Urho3D/Graphics/Graphics.h>
 #include <Urho3D/Graphics/Material.h>
 #include <Urho3D/Graphics/Model.h>
@@ -197,6 +198,7 @@ void RenderToTexture::CreateScene()
             // in the main view
             RenderSurface* surface = renderTexture->GetRenderSurface();
             SharedPtr<Viewport> rttViewport(new Viewport(context_, rttScene_, rttCameraNode_->GetComponent<Camera>()));
+            rttViewport->SetCustomViewport(MakeShared<CustomViewportScript>(context_));
             surface->SetViewport(0, rttViewport);
         }
 

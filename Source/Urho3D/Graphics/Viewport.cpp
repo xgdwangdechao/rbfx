@@ -74,6 +74,11 @@ void Viewport::RegisterObject(Context* context)
     context->RegisterFactory<Viewport>();
 }
 
+void Viewport::SetCustomViewport(CustomViewportScript* script)
+{
+    customViewportScript_ = script;
+}
+
 void Viewport::SetScene(Scene* scene)
 {
     scene_ = scene;
@@ -222,7 +227,8 @@ Vector3 Viewport::ScreenToWorldPoint(int x, int y, float depth) const
 void Viewport::AllocateView()
 {
     view_ = MakeShared<View>(context_);
-    customView_ = MakeShared<CustomView>(context_);
+    if (customViewportScript_)
+        customView_ = MakeShared<CustomView>(context_, customViewportScript_);
 }
 
 }

@@ -1553,6 +1553,9 @@ void Renderer::UpdateQueuedViewport(unsigned index)
 
     if (customView)
     {
+        if (!customView->Define(renderTarget, viewport))
+            return;
+
         customViews_.push_back(WeakPtr<CustomView>(customView));
     }
     else

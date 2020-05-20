@@ -24,8 +24,6 @@
 
 #include "../Core/Object.h"
 #include "../Graphics/CustomViewportDriver.h"
-#include "../Graphics/CustomViewportScript.h"
-#include "../Graphics/Drawable.h"
 
 namespace Urho3D
 {
@@ -38,51 +36,15 @@ class XMLFile;
 class View;
 class Viewport;
 
-///
-class URHO3D_API CustomView : public Object, private CustomViewportDriver
+class CustomViewportScript : public Object
 {
-    URHO3D_OBJECT(CustomView, Object);
+    URHO3D_OBJECT(CustomViewportScript, Object);
 
 public:
-    /// Construct with defaults.
-    CustomView(Context* context, CustomViewportScript* script);
-    /// Destruct.
-    ~CustomView() override;
-
-    /// Register object with the engine.
+    CustomViewportScript(Context* context) : Object(context) {}
     static void RegisterObject(Context* context);
 
-    /// Define all dependencies.
-    bool Define(RenderSurface* renderTarget, Viewport* viewport);
-
-    /// Update.
-    void Update(const FrameInfo& frameInfo);
-
-    /// Render.
-    void Render();
-
-protected:
-    //void ClearViewport(ClearTargetFlags flags, const Color& color, float depth, unsigned stencil) override;
-    void CollectDrawables(DrawableCollection& drawables, Camera* camera, DrawableFlags flags) override;
-    void ResetViewportCache(DrawableCachePerViewport& cache) override;
-    void ProcessPrimaryDrawables(DrawableCachePerViewport& cache,
-        const DrawableCollection& drawables, Camera* camera) override;
-
-private:
-    Graphics* graphics_{};
-    WorkQueue* workQueue_{};
-    WeakPtr<CustomViewportScript> script_;
-
-    Scene* scene_{};
-    Camera* camera_{};
-    Octree* octree_{};
-    RenderSurface* renderTarget_{};
-    Viewport* viewport_{};
-
-    unsigned numThreads_{ 1 };
-    unsigned numDrawables_{};
-
-    FrameInfo frameInfo_{};
+    void Render(CustomViewportDriver* driver);
 };
 
 }

@@ -296,6 +296,7 @@ void SamplesManager::Start()
 #endif
 
     startSample_ = "StaticScene";
+    startSample_ = "RenderToTexture";
     if (!startSample_.empty())
         StartSample(startSample_);
 }
