@@ -72,6 +72,10 @@ if ("${CMAKE_SYSTEM_NAME}" STREQUAL "Linux")
     set (LINUX ON CACHE BOOL "" FORCE)
 endif ()
 
+if ("${CMAKE_SYSTEM_NAME}" STREQUAL "WindowsStore")
+    set (UWP ON CACHE BOOL "" FORCE)
+endif ()
+
 if (ANDROID OR IOS)
     set (MOBILE ON CACHE BOOL "" FORCE)
 elseif (APPLE OR "${CMAKE_SYSTEM_NAME}" MATCHES "Darwin")
@@ -87,10 +91,16 @@ if ((WIN32 OR LINUX OR MACOS) AND NOT WEB AND NOT MOBILE)
 endif ()
 
 # Build properties
-_option(BUILD_SHARED_LIBS                        "Build engine as shared library."       ON)
-_option(URHO3D_ENABLE_ALL                        "Enable (almost) all engine features."  ON)
-_option(URHO3D_STATIC_RUNTIME                    "Link to static runtime"               OFF)
-set    (URHO3D_SSE             SSE2 CACHE STRING "Enable SSE instructions")
+_option(BUILD_SHARED_LIBS         "Build engine as shared library."       ON)
+_option(URHO3D_ENABLE_ALL         "Enable (almost) all engine features."  ON)
+_option(URHO3D_STATIC_RUNTIME     "Link to static runtime"               OFF)
+set (DEFAULT_SSE SSE2)
+if (UWP)
+	set (URHO3D_SSE OFF)
+	set (URHO3D_GRAPHICS_API D3D11)
+else ()
+	set (URHO3D_SSE ${DEFAULT_SSE} CACHE STRING "Enable SSE instructions")
+endif ()
 
 # Subsystems
 _option2(URHO3D_GLOW              "Lightmapping subsystem enabled"                        ${URHO3D_ENABLE_ALL} "NOT WEB AND NOT MOBILE AND NOT MINGW" OFF)
