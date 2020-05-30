@@ -25,6 +25,7 @@
 #include "../Core/Context.h"
 #include "../Graphics/Geometry.h"
 #include "../Graphics/Graphics.h"
+#include "../Graphics/GraphicsEvents.h"
 #include "../Graphics/IndexBuffer.h"
 #include "../Graphics/VertexBuffer.h"
 #include "../IO/Log.h"
@@ -71,6 +72,7 @@ bool Geometry::SetNumVertexBuffers(unsigned num)
     unsigned oldSize = vertexBuffers_.size();
     vertexBuffers_.resize(num);
 
+    RefreshSubscriptions();
     return true;
 }
 
@@ -89,6 +91,7 @@ bool Geometry::SetVertexBuffer(unsigned index, VertexBuffer* buffer)
 void Geometry::SetIndexBuffer(IndexBuffer* buffer)
 {
     indexBuffer_ = buffer;
+    RecalculatePipelineStateHash();
 }
 
 bool Geometry::SetDrawRange(PrimitiveType type, unsigned indexStart, unsigned indexCount, bool getUsedVertexRange)
@@ -124,6 +127,7 @@ bool Geometry::SetDrawRange(PrimitiveType type, unsigned indexStart, unsigned in
         vertexCount_ = 0;
     }
 
+    RecalculatePipelineStateHash();
     return true;
 }
 
@@ -152,6 +156,7 @@ bool Geometry::SetDrawRange(PrimitiveType type, unsigned indexStart, unsigned in
     vertexStart_ = vertexStart;
     vertexCount_ = vertexCount;
 
+    RecalculatePipelineStateHash();
     return true;
 }
 
@@ -348,6 +353,39 @@ bool Geometry::IsInside(const Ray& ray) const
 
     return vertexData ? (indexData ? ray.InsideGeometry(vertexData, vertexSize, indexData, indexSize, indexStart_, indexCount_) :
                          ray.InsideGeometry(vertexData, vertexSize, vertexStart_, vertexCount_)) : false;
+}
+
+void Geometry::SubscribeToBufferFormatChange(Object* buffer)
+{
+    if (buffer)
+        SubscribeToEvent(buffer, E_BUFFERFORMATCHANGED, URHO3D_HANDLER(Geometry, HandleBufferFormatChanged));
+}
+
+void Geometry::RefreshSubscriptions()
+{
+    UnsubscribeFromAllEvents();
+
+    for (VertexBuffer* vertexBuffer : vertexBuffers_)
+        SubscribeToBufferFormatChange(vertexBuffer);
+
+    SubscribeToBufferFormatChange(indexBuffer_);
+}
+
+unsigned Geometry::RecalculatePipelineStateHash() const
+{
+    unsigned hash = 0;
+    CombineHash(hash, vertexBuffers_.size());
+    for (VertexBuffer* vertexBuffer : vertexBuffers_)
+    {
+        if (vertexBuffer)
+        {
+            for (const VertexElement& element : vertexBuffer->GetElements())
+                CombineHash(hash, element.ToHash());
+        }
+    }
+    CombineHash(hash, IndexBuffer::GetIndexBufferType(indexBuffer_));
+    CombineHash(hash, primitiveType_);
+    return hash;
 }
 
 }
