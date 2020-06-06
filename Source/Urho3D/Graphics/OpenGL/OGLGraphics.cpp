@@ -563,6 +563,11 @@ void Graphics::Close()
     Release(true, true);
 }
 
+void Graphics::SetEnableConstantBuffers(bool enable)
+{
+    constantBuffersEnabled_ = enable && constantBuffersSupport_;
+}
+
 bool Graphics::TakeScreenShot(Image& destImage)
 {
     URHO3D_PROFILE("TakeScreenShot");
@@ -1145,29 +1150,6 @@ void Graphics::SetShaders(ShaderVariation* vs, ShaderVariation* ps)
         }
     }
 
-    // Update the clip plane uniform on GL3, and set constant buffers
-#ifndef GL_ES_VERSION_2_0
-    /*if (gl3Support && impl_->shaderProgram_)
-    {
-        const SharedPtr<ConstantBuffer>* constantBuffers = impl_->shaderProgram_->GetConstantBuffers();
-        for (unsigned i = 0; i < MAX_SHADER_PARAMETER_GROUPS * 2; ++i)
-        {
-            ConstantBuffer* buffer = constantBuffers[i];
-            if (buffer != impl_->constantBuffers_[i])
-            {
-                unsigned object = buffer ? buffer->GetGPUObjectName() : 0;
-                glBindBufferBase(GL_UNIFORM_BUFFER, i, object);
-                // Calling glBindBufferBase also affects the generic buffer binding point
-                impl_->boundUBO_ = object;
-                impl_->constantBuffers_[i] = buffer;
-                ShaderProgram::ClearGlobalParameterSource((ShaderParameterGroup)(i % MAX_SHADER_PARAMETER_GROUPS));
-            }
-        }
-
-        SetShaderParameter(VSP_CLIPPLANE, useClipPlane_ ? clipPlane_ : Vector4(0.0f, 0.0f, 0.0f, 1.0f));
-    }*/
-#endif
-
     // Store shader combination if shader dumping in progress
     if (shaderPrecache_)
         shaderPrecache_->StoreShaders(vertexShader_, pixelShader_);
@@ -1188,15 +1170,22 @@ void Graphics::SetShaders(ShaderVariation* vs, ShaderVariation* ps)
 
 void Graphics::SetShaderConstantBuffers(ea::span<const ConstantBufferRange, MAX_SHADER_PARAMETER_GROUPS> constantBuffers)
 {
-    //GLint uniformBufferAlignSize = 0;
-    //glGetIntegerv(GL_UNIFORM_BUFFER_OFFSET_ALIGNMENT, &uniformBufferAlignSize);
+    if (!constantBuffersEnabled_)
+    {
+        URHO3D_LOGERROR("Constant buffers are disabled, SetShaderConstantBuffers call is ignored");
+        return;
+    }
 
     for (unsigned i = 0; i < MAX_SHADER_PARAMETER_GROUPS; ++i)
     {
         const ConstantBufferRange& range = constantBuffers[i];
-        const unsigned object = range.constantBuffer_ ? range.constantBuffer_->GetGPUObjectName() : 0;
-        glBindBufferRange(GL_UNIFORM_BUFFER, i, object, range.offset_, range.size_);
-        impl_->boundUBO_ = object;
+        if (range != constantBuffers_[i])
+        {
+            const unsigned object = range.constantBuffer_ ? range.constantBuffer_->GetGPUObjectName() : 0;
+            glBindBufferRange(GL_UNIFORM_BUFFER, i, object, range.offset_, range.size_);
+            impl_->boundUBO_ = object;
+            constantBuffers_[i] = range;
+        }
     }
 }
 
@@ -1207,15 +1196,6 @@ void Graphics::SetShaderParameter(StringHash param, const float data[], unsigned
         const ShaderParameter* info = impl_->shaderProgram_->GetParameter(param);
         if (info)
         {
-            if (info->bufferPtr_)
-            {
-                ConstantBuffer* buffer = info->bufferPtr_;
-                if (!buffer->IsDirty())
-                    impl_->dirtyConstantBuffers_.push_back(buffer);
-                buffer->SetParameter(info->offset_, (unsigned)(count * sizeof(float)), data);
-                return;
-            }
-
             switch (info->glType_)
             {
             case GL_FLOAT:
@@ -1255,15 +1235,6 @@ void Graphics::SetShaderParameter(StringHash param, float value)
         const ShaderParameter* info = impl_->shaderProgram_->GetParameter(param);
         if (info)
         {
-            if (info->bufferPtr_)
-            {
-                ConstantBuffer* buffer = info->bufferPtr_;
-                if (!buffer->IsDirty())
-                    impl_->dirtyConstantBuffers_.push_back(buffer);
-                buffer->SetParameter(info->offset_, sizeof(float), &value);
-                return;
-            }
-
             glUniform1fv(info->location_, 1, &value);
         }
     }
@@ -1276,15 +1247,6 @@ void Graphics::SetShaderParameter(StringHash param, int value)
         const ShaderParameter* info = impl_->shaderProgram_->GetParameter(param);
         if (info)
         {
-            if (info->bufferPtr_)
-            {
-                ConstantBuffer* buffer = info->bufferPtr_;
-                if (!buffer->IsDirty())
-                    impl_->dirtyConstantBuffers_.push_back(buffer);
-                buffer->SetParameter(info->offset_, sizeof(int), &value);
-                return;
-            }
-
             glUniform1i(info->location_, value);
         }
     }
@@ -1298,15 +1260,6 @@ void Graphics::SetShaderParameter(StringHash param, bool value)
         const ShaderParameter* info = impl_->shaderProgram_->GetParameter(param);
         if (info)
         {
-            if (info->bufferPtr_)
-            {
-                ConstantBuffer* buffer = info->bufferPtr_;
-                if (!buffer->IsDirty())
-                    impl_->dirtyConstantBuffers_.push_back(buffer);
-                buffer->SetParameter(info->offset_, sizeof(bool), &value);
-                return;
-            }
-
             glUniform1i(info->location_, (int)value);
         }
     }
@@ -1324,15 +1277,6 @@ void Graphics::SetShaderParameter(StringHash param, const Vector2& vector)
         const ShaderParameter* info = impl_->shaderProgram_->GetParameter(param);
         if (info)
         {
-            if (info->bufferPtr_)
-            {
-                ConstantBuffer* buffer = info->bufferPtr_;
-                if (!buffer->IsDirty())
-                    impl_->dirtyConstantBuffers_.push_back(buffer);
-                buffer->SetParameter(info->offset_, sizeof(Vector2), &vector);
-                return;
-            }
-
             // Check the uniform type to avoid mismatch
             switch (info->glType_)
             {
@@ -1357,15 +1301,6 @@ void Graphics::SetShaderParameter(StringHash param, const Matrix3& matrix)
         const ShaderParameter* info = impl_->shaderProgram_->GetParameter(param);
         if (info)
         {
-            if (info->bufferPtr_)
-            {
-                ConstantBuffer* buffer = info->bufferPtr_;
-                if (!buffer->IsDirty())
-                    impl_->dirtyConstantBuffers_.push_back(buffer);
-                buffer->SetVector3ArrayParameter(info->offset_, 3, &matrix);
-                return;
-            }
-
             glUniformMatrix3fv(info->location_, 1, GL_FALSE, matrix.Data());
         }
     }
@@ -1378,15 +1313,6 @@ void Graphics::SetShaderParameter(StringHash param, const Vector3& vector)
         const ShaderParameter* info = impl_->shaderProgram_->GetParameter(param);
         if (info)
         {
-            if (info->bufferPtr_)
-            {
-                ConstantBuffer* buffer = info->bufferPtr_;
-                if (!buffer->IsDirty())
-                    impl_->dirtyConstantBuffers_.push_back(buffer);
-                buffer->SetParameter(info->offset_, sizeof(Vector3), &vector);
-                return;
-            }
-
             // Check the uniform type to avoid mismatch
             switch (info->glType_)
             {
@@ -1415,15 +1341,6 @@ void Graphics::SetShaderParameter(StringHash param, const Matrix4& matrix)
         const ShaderParameter* info = impl_->shaderProgram_->GetParameter(param);
         if (info)
         {
-            if (info->bufferPtr_)
-            {
-                ConstantBuffer* buffer = info->bufferPtr_;
-                if (!buffer->IsDirty())
-                    impl_->dirtyConstantBuffers_.push_back(buffer);
-                buffer->SetParameter(info->offset_, sizeof(Matrix4), &matrix);
-                return;
-            }
-
             glUniformMatrix4fv(info->location_, 1, GL_FALSE, matrix.Data());
         }
     }
@@ -1436,15 +1353,6 @@ void Graphics::SetShaderParameter(StringHash param, const Vector4& vector)
         const ShaderParameter* info = impl_->shaderProgram_->GetParameter(param);
         if (info)
         {
-            if (info->bufferPtr_)
-            {
-                ConstantBuffer* buffer = info->bufferPtr_;
-                if (!buffer->IsDirty())
-                    impl_->dirtyConstantBuffers_.push_back(buffer);
-                buffer->SetParameter(info->offset_, sizeof(Vector4), &vector);
-                return;
-            }
-
             // Check the uniform type to avoid mismatch
             switch (info->glType_)
             {
@@ -1491,15 +1399,6 @@ void Graphics::SetShaderParameter(StringHash param, const Matrix3x4& matrix)
             fullMatrix.m21_ = matrix.m21_;
             fullMatrix.m22_ = matrix.m22_;
             fullMatrix.m23_ = matrix.m23_;
-
-            if (info->bufferPtr_)
-            {
-                ConstantBuffer* buffer = info->bufferPtr_;
-                if (!buffer->IsDirty())
-                    impl_->dirtyConstantBuffers_.push_back(buffer);
-                buffer->SetParameter(info->offset_, sizeof(Matrix4), &fullMatrix);
-                return;
-            }
 
             glUniformMatrix4fv(info->location_, 1, GL_FALSE, fullMatrix.Data());
         }
@@ -2388,9 +2287,6 @@ void Graphics::CleanupShaderPrograms(ShaderVariation* variation)
 
 ConstantBuffer* Graphics::GetOrCreateConstantBuffer(ShaderType /*type*/,  unsigned index, unsigned size)
 {
-    // Note: shaderType parameter is not used on OpenGL, instead binding index should already use the PS range
-    // for PS constant buffers
-
     unsigned key = (index << 16u) | size;
     auto i = impl_->allConstantBuffers_.find(key);
     if (i == impl_->allConstantBuffers_.end())
@@ -2842,6 +2738,11 @@ void Graphics::CheckFeatureSupport()
         anisotropySupport_ = true;
         sRGBSupport_ = true;
         sRGBWriteSupport_ = true;
+        constantBuffersSupport_ = true;
+
+        int uniformBufferAlignSize = 0;
+        glGetIntegerv(GL_UNIFORM_BUFFER_OFFSET_ALIGNMENT, &uniformBufferAlignSize);
+        constantBufferOffsetAlignment_ = static_cast<unsigned>(uniformBufferAlignSize);
 
         glGetIntegerv(GL_MAX_COLOR_ATTACHMENTS, &numSupportedRTs);
     }
@@ -2852,6 +2753,7 @@ void Graphics::CheckFeatureSupport()
         anisotropySupport_ = GLEW_EXT_texture_filter_anisotropic != 0;
         sRGBSupport_ = GLEW_EXT_texture_sRGB != 0;
         sRGBWriteSupport_ = GLEW_EXT_framebuffer_sRGB != 0;
+        constantBuffersSupport_ = false;
 
         glGetIntegerv(GL_MAX_COLOR_ATTACHMENTS_EXT, &numSupportedRTs);
     }
@@ -2917,22 +2819,15 @@ void Graphics::CheckFeatureSupport()
     }
 #endif
 
+    // Enable constant buffers if supported
+    constantBuffersEnabled_ = constantBuffersSupport_;
+
     // Consider OpenGL shadows always hardware sampled, if supported at all
     hardwareShadowSupport_ = shadowMapFormat_ != 0;
 }
 
 void Graphics::PrepareDraw()
 {
-#ifndef GL_ES_VERSION_2_0
-    /*if (gl3Support)
-    {
-        for (auto i = impl_->dirtyConstantBuffers_.begin(); i !=
-            impl_->dirtyConstantBuffers_.end(); ++i)
-            (*i)->Apply();
-        impl_->dirtyConstantBuffers_.clear();
-    }*/
-#endif
-
     if (impl_->fboDirty_)
     {
         impl_->fboDirty_ = false;
