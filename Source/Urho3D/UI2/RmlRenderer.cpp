@@ -46,6 +46,7 @@ void RmlRenderer::CompileGeometry(CompiledGeometryForRml& compiledGeometryOut, R
 {
     VertexBuffer* vertexBuffer;
     IndexBuffer* indexBuffer;
+    compiledGeometryOut.texture_ = reinterpret_cast<Urho3D::Texture*>(texture);
     if (compiledGeometryOut.vertexBuffer_.Null())
         compiledGeometryOut.vertexBuffer_ = vertexBuffer = new VertexBuffer(context_);
     else
@@ -55,7 +56,6 @@ void RmlRenderer::CompileGeometry(CompiledGeometryForRml& compiledGeometryOut, R
         compiledGeometryOut.indexBuffer_ = indexBuffer = new IndexBuffer(context_);
     else
         indexBuffer = compiledGeometryOut.indexBuffer_.Get();
-
 
     vertexBuffer->SetSize(numVertices, MASK_POSITION | MASK_COLOR | (texture ? MASK_TEXCOORD1 : 0), true);
     indexBuffer->SetSize(numIndices, true);
@@ -75,13 +75,7 @@ void RmlRenderer::CompileGeometry(CompiledGeometryForRml& compiledGeometryOut, R
         }
     }
     vertexBuffer->Unlock();
-
     indexBuffer->SetDataRange(indices, 0, numIndices);
-
-    CompiledGeometryForRml* geometry = new CompiledGeometryForRml();
-    geometry->indexBuffer_ = indexBuffer;
-    geometry->vertexBuffer_ = vertexBuffer;
-    geometry->texture_ = reinterpret_cast<Urho3D::Texture*>(texture);
 }
 
 Rml::Core::CompiledGeometryHandle RmlRenderer::CompileGeometry(Rml::Core::Vertex* vertices, int numVertices, int* indices, int numIndices, const Rml::Core::TextureHandle texture)
@@ -98,7 +92,6 @@ void RmlRenderer::RenderCompiledGeometry(Rml::Core::CompiledGeometryHandle geome
     // Engine does not render when window is closed or device is lost
     assert(graphics_ && graphics_->IsInitialized() && !graphics_->IsDeviceLost());
 
-    unsigned alphaFormat = Graphics::GetAlphaFormat();
     RenderSurface* surface = graphics_->GetRenderTarget(0);
     IntVector2 viewSize = graphics_->GetViewport().Size();
     Vector2 invScreenSize(1.0f / (float)viewSize.x_, 1.0f / (float)viewSize.y_);
@@ -149,15 +142,18 @@ void RmlRenderer::RenderCompiledGeometry(Rml::Core::CompiledGeometryHandle geome
     {
         ps = noTexturePS;
         vs = noTextureVS;
+        graphics_->SetTexture(0, nullptr);
+
     }
     else
     {
         // If texture contains only an alpha channel, use alpha shader (for fonts)
         vs = diffTextureVS;
-        if (geometry->texture_->GetFormat() == alphaFormat)
+        if (geometry->texture_->GetFormat() == Graphics::GetAlphaFormat())
             ps = alphaTexturePS;
         else
             ps = diffTexturePS;
+        graphics_->SetTexture(0, geometry->texture_);
     }
 
     // Apply translation
@@ -200,8 +196,6 @@ void RmlRenderer::RenderCompiledGeometry(Rml::Core::CompiledGeometryHandle geome
     else
         graphics_->SetScissorTest(false);
 
-    graphics_->SetTexture(0, geometry->texture_);
-
     graphics_->Draw(TRIANGLE_LIST, 0, geometry->indexBuffer_->GetIndexCount(), 0, geometry->vertexBuffer_->GetVertexCount());
 }
 
@@ -211,7 +205,7 @@ void RmlRenderer::RenderGeometry(Rml::Core::Vertex* vertices, int num_vertices, 
     CompiledGeometryForRml geometry;
     geometry.vertexBuffer_ = vertexBuffer_;
     geometry.indexBuffer_ = indexBuffer_;
-    CompileGeometry(vertices, num_vertices, indices, num_indices, texture);
+    CompileGeometry(geometry, vertices, num_vertices, indices, num_indices, texture);
     RenderCompiledGeometry(reinterpret_cast<Rml::Core::CompiledGeometryHandle>(&geometry), translation);
 }
 
@@ -249,10 +243,14 @@ bool RmlRenderer::LoadTexture(Rml::Core::TextureHandle& textureOut, Rml::Core::V
 
 bool RmlRenderer::GenerateTexture(Rml::Core::TextureHandle& handleOut, const Rml::Core::byte* source, const Rml::Core::Vector2i& size)
 {
+    Image img(context_);
+    img.SetSize(size.x, size.y, 4);
+    img.SetData(source);
     Texture2D* texture = context_->CreateObject<Texture2D>().Detach();
     texture->AddRef();
-    texture->SetSize(size.x, size.y, Graphics::GetAlphaFormat());
-    texture->SetData(0, 0, 0, size.x, size.y, source);
+    texture->SetData(&img, true);
+    // texture->SetSize(size.x, size.y, Graphics::GetRGBAFormat());
+    // texture->SetData(0, 0, 0, size.x, size.y, source);
     handleOut = reinterpret_cast<Rml::Core::TextureHandle>(texture);
     return true;
 }
