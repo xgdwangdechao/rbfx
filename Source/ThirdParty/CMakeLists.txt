@@ -42,6 +42,7 @@ add_subdirectory(ETCPACK)
 
 if (NOT MINI_URHO)
     add_subdirectory(FreeType)
+    add_subdirectory(RmlUi)
 
     if (URHO3D_GLOW)
         add_subdirectory(xatlas)
