@@ -54,7 +54,7 @@ endmacro()
 define_engine_source_files (Container Core Engine IO Math)
 
 if (NOT MINI_URHO)
-    define_engine_source_files (Audio Input Resource Scene UI)
+    define_engine_source_files (Audio Input Resource Scene UI UI2)
     define_engine_source_files (NORECURSE . Graphics)
     if (URHO3D_OPENGL)
         define_engine_source_files (Graphics/OpenGL)
@@ -186,6 +186,7 @@ set (THIRD_PARTY_DEPENDENCIES
     ETCPACK
     xatlas
     embree
+    RmlUi
 )
 
 if (URHO3D_MERGE_STATIC_LIBS)
