@@ -26,6 +26,7 @@
 #include <Urho3D/UI/Font.h>
 #include <Urho3D/UI/Text.h>
 #include <Urho3D/UI/UI.h>
+#include <Urho3D/UI2/UI2.h>
 
 #include "HelloWorld.h"
 
@@ -51,6 +52,8 @@ void HelloWorld::Start()
 
     // Set the mouse mode to use in the sample
     Sample::InitMouseMode(MM_FREE);
+
+    context_->RegisterSubsystem(new UI2(context_));
 }
 
 void HelloWorld::CreateText()

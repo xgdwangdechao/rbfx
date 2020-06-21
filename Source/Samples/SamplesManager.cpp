@@ -139,6 +139,7 @@ void SamplesManager::Setup()
     // Modify engine startup parameters
     engineParameters_[EP_WINDOW_TITLE] = "rbfx samples";
     engineParameters_[EP_LOG_NAME]     = GetSubsystem<FileSystem>()->GetAppPreferencesDir("rbfx", "samples") + GetTypeName() + ".log";
+    engineParameters_[EP_LOG_LEVEL]    = LOG_DEBUG;
     engineParameters_[EP_FULL_SCREEN]  = false;
     engineParameters_[EP_HEADLESS]     = false;
     engineParameters_[EP_SOUND]        = true;

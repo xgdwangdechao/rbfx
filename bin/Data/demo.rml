@@ -1,0 +1,16 @@
+<rml>
+	<head>
+		<link type="text/rcss" href="rml.rcss"/>
+		<title>Demo</title>
+		<style>
+		</style>
+	</head>
+	<body>
+		<div style="color: red; border: 1px red; width: 100px; height: 100px;">
+			<div style="color: red; border: 1px green; width: 10px; height: 10px;">
+			</div>
+
+			<span style="color: green; font-family: Delicious; font-size: 20px;">This is a sample.</span>
+		</div>
+	</body>
+</rml>
