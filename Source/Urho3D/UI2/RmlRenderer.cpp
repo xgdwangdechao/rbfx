@@ -129,32 +129,24 @@ void RmlRenderer::RenderCompiledGeometry(Rml::Core::CompiledGeometryHandle geome
     graphics_->SetVertexBuffer(geometry->vertexBuffer_);
     graphics_->SetIndexBuffer(geometry->indexBuffer_);
 
-    ShaderVariation* noTextureVS = graphics_->GetShader(VS, "Basic", "VERTEXCOLOR");
-    ShaderVariation* diffTextureVS = graphics_->GetShader(VS, "Basic", "DIFFMAP VERTEXCOLOR");
-    ShaderVariation* noTexturePS = graphics_->GetShader(PS, "Basic", "VERTEXCOLOR");
-    ShaderVariation* diffTexturePS = graphics_->GetShader(PS, "Basic", "DIFFMAP VERTEXCOLOR");
-    ShaderVariation* alphaTexturePS = graphics_->GetShader(PS, "Basic", "ALPHAMAP VERTEXCOLOR");
-
     ShaderVariation* ps;
     ShaderVariation* vs;
 
     if (geometry->texture_.Null())
     {
-        ps = noTexturePS;
-        vs = noTextureVS;
-        graphics_->SetTexture(0, nullptr);
-
+        ps = graphics_->GetShader(PS, "Basic", "VERTEXCOLOR");
+        vs = graphics_->GetShader(VS, "Basic", "VERTEXCOLOR");
     }
     else
     {
         // If texture contains only an alpha channel, use alpha shader (for fonts)
-        vs = diffTextureVS;
+        vs = graphics_->GetShader(VS, "Basic", "DIFFMAP VERTEXCOLOR");
         if (geometry->texture_->GetFormat() == Graphics::GetAlphaFormat())
-            ps = alphaTexturePS;
+            ps = graphics_->GetShader(PS, "Basic", "ALPHAMAP VERTEXCOLOR");
         else
-            ps = diffTexturePS;
-        graphics_->SetTexture(0, geometry->texture_);
+            ps = graphics_->GetShader(PS, "Basic", "DIFFMAP VERTEXCOLOR");
     }
+    graphics_->SetTexture(0, geometry->texture_);
 
     // Apply translation
     Matrix3x4 trans(Matrix3x4::IDENTITY);
@@ -176,6 +168,10 @@ void RmlRenderer::RenderCompiledGeometry(Rml::Core::CompiledGeometryHandle geome
     if (scrissorEnabled_)
     {
         IntRect scissor = scissor_;
+        // scissor.left_ += translation.x;
+        // scissor.right_ += translation.x;
+        // scissor.top_ += translation.y;
+        // scissor.bottom_ += translation.y;
         scissor.left_ = (int)(scissor.left_ * uiScale_);
         scissor.top_ = (int)(scissor.top_ * uiScale_);
         scissor.right_ = (int)(scissor.right_ * uiScale_);
@@ -243,14 +239,12 @@ bool RmlRenderer::LoadTexture(Rml::Core::TextureHandle& textureOut, Rml::Core::V
 
 bool RmlRenderer::GenerateTexture(Rml::Core::TextureHandle& handleOut, const Rml::Core::byte* source, const Rml::Core::Vector2i& size)
 {
-    Image img(context_);
-    img.SetSize(size.x, size.y, 4);
-    img.SetData(source);
+    Image image(context_);
+    image.SetSize(size.x, size.y, 4);
+    image.SetData(source);
     Texture2D* texture = context_->CreateObject<Texture2D>().Detach();
     texture->AddRef();
-    texture->SetData(&img, true);
-    // texture->SetSize(size.x, size.y, Graphics::GetRGBAFormat());
-    // texture->SetData(0, 0, 0, size.x, size.y, source);
+    texture->SetData(&image, true);
     handleOut = reinterpret_cast<Rml::Core::TextureHandle>(texture);
     return true;
 }
