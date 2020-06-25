@@ -26,8 +26,8 @@
  *
  */
 
-#ifndef RMLUICOREFONTFACEHANDLE_H
-#define RMLUICOREFONTFACEHANDLE_H
+#ifndef RMLUI_CORE_FONTENGINEDEFAULT_FONTFACEHANDLE_H
+#define RMLUI_CORE_FONTENGINEDEFAULT_FONTFACEHANDLE_H
 
 #include "../../../Include/RmlUi/Core/Traits.h"
 #include "../../../Include/RmlUi/Core/FontEffect.h"
@@ -37,7 +37,6 @@
 #include "FontTypes.h"
 
 namespace Rml {
-namespace Core {
 
 class FontFaceLayer;
 
@@ -127,10 +126,10 @@ private:
 		const FontEffect* font_effect;
 		UniquePtr<FontFaceLayer> layer; 
 	};
-	using FontLayerMap = std::vector< EffectLayerPair >;
+	using FontLayerMap = Vector< EffectLayerPair >;
 	using FontLayerCache = SmallUnorderedMap< size_t, FontFaceLayer* >;
-	using LayerConfiguration = std::vector< FontFaceLayer* >;
-	using LayerConfigurationList = std::vector< LayerConfiguration >;
+	using LayerConfiguration = Vector< FontFaceLayer* >;
+	using LayerConfigurationList = Vector< LayerConfiguration >;
 
 	// The list of all font layers, index by the effect that instanced them.
 	FontFaceLayer* base_layer;
@@ -149,7 +148,5 @@ private:
 	FontFaceHandleFreetype ft_face;
 };
 
-}
-}
-
+} // namespace Rml
 #endif

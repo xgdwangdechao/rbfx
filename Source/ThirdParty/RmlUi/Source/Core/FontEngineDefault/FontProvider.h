@@ -26,15 +26,14 @@
  *
  */
 
-#ifndef RMLUICOREFONTPROVIDER_H
-#define RMLUICOREFONTPROVIDER_H
+#ifndef RMLUI_CORE_FONTENGINEDEFAULT_FONTPROVIDER_H
+#define RMLUI_CORE_FONTENGINEDEFAULT_FONTPROVIDER_H
 
 #include "../../../Include/RmlUi/Core/Types.h"
 #include "../../../Include/RmlUi/Core/ComputedValues.h"
 #include "FontTypes.h"
 
 namespace Rml {
-namespace Core {
 
 class FontFace;
 class FontFamily;
@@ -84,7 +83,7 @@ private:
 
 	bool AddFace(FontFaceHandleFreetype face, const String& family, Style::FontStyle style, Style::FontWeight weight, bool fallback_face, bool release_stream);
 
-	using FontFaceList = std::vector<FontFace*>;
+	using FontFaceList = Vector<FontFace*>;
 	using FontFamilyMap = UnorderedMap< String, UniquePtr<FontFamily>>;
 
 	FontFamilyMap font_families;
@@ -94,7 +93,5 @@ private:
 	
 };
 
-}
-}
-
+} // namespace Rml
 #endif

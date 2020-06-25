@@ -30,7 +30,6 @@
 #include "DecoratorTiledVerticalInstancer.h"
 
 namespace Rml {
-namespace Core {
 
 DecoratorTiledVerticalInstancer::DecoratorTiledVerticalInstancer() : DecoratorTiledInstancer(3)
 {
@@ -56,12 +55,11 @@ SharedPtr<Decorator> DecoratorTiledVerticalInstancer::InstanceDecorator(const St
 	if (!GetTileProperties(tiles, textures, num_tiles, properties, interface))
 		return nullptr;
 
-	auto decorator = std::make_shared<DecoratorTiledVertical>();
+	auto decorator = MakeShared<DecoratorTiledVertical>();
 	if (!decorator->Initialise(tiles, textures))
 		return nullptr;
 
 	return decorator;
 }
 
-}
-}
+} // namespace Rml

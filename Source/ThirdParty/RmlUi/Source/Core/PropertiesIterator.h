@@ -15,7 +15,7 @@
  *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -25,22 +25,19 @@
  * THE SOFTWARE.
  *
  */
-#ifndef RMLUICOREPROPERTIESITERATOR_H
-#define RMLUICOREPROPERTIESITERATOR_H
+#ifndef RMLUI_CORE_PROPERTIESITERATOR_H
+#define RMLUI_CORE_PROPERTIESITERATOR_H
 
 #include "../../Include/RmlUi/Core/Types.h"
 #include "../../Include/RmlUi/Core/PropertyIdSet.h"
 
 namespace Rml {
-namespace Core {
-
-
 
 // An iterator for local properties defined on an element.
 // Note: Modifying the underlying style invalidates the iterator.
 class PropertiesIterator {
 public:
-	using ValueType = std::pair<PropertyId, const Property&>;
+	using ValueType = Pair<PropertyId, const Property&>;
 	using PropertyIt = PropertyMap::const_iterator;
 
 	PropertiesIterator(PropertyIt it_style, PropertyIt it_style_end, PropertyIt it_definition, PropertyIt it_definition_end)
@@ -88,7 +85,7 @@ private:
 		return false;
 	}
 
-	inline void ProceedToNextValid() 
+	inline void ProceedToNextValid()
 	{
 		for (; it_style != it_style_end; ++it_style)
 		{
@@ -108,7 +105,5 @@ private:
 };
 
 
-}
-}
-
+} // namespace Rml
 #endif

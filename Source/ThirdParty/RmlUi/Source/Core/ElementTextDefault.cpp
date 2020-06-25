@@ -40,7 +40,6 @@
 #include "../../Include/RmlUi/Core/Profiling.h"
 
 namespace Rml {
-namespace Core {
 
 static bool BuildToken(String& token, const char*& token_begin, const char* string_end, bool first_token, bool collapse_white_space, bool break_at_endline, Style::TextTransform text_transformation, bool decode_escape_characters);
 static bool LastToken(const char* token_begin, const char* string_end, bool collapse_white_space, bool break_at_endline);
@@ -326,6 +325,11 @@ void ElementTextDefault::OnPropertyChange(const PropertyIdSet& changed_propertie
 		font_effects_dirty = true;
 	}
 
+	if (changed_properties.Contains(PropertyId::FontEffect))
+	{
+		font_effects_dirty = true;
+	}
+
 	if (changed_properties.Contains(PropertyId::TextDecoration))
 	{
 		decoration_property = computed.text_decoration;
@@ -359,7 +363,7 @@ void ElementTextDefault::OnPropertyChange(const PropertyIdSet& changed_propertie
 		geometry_dirty = true;
 
 		// Re-colour the decoration geometry.
-		std::vector< Vertex >& vertices = decoration.GetVertices();
+		Vector< Vertex >& vertices = decoration.GetVertices();
 		for (size_t i = 0; i < vertices.size(); ++i)
 			vertices[i].colour = colour;
 
@@ -593,5 +597,4 @@ static bool LastToken(const char* token_begin, const char* string_end, bool coll
 	return last_token;
 }
 
-}
-}
+} // namespace Rml

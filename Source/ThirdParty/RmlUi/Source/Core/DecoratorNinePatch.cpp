@@ -15,7 +15,7 @@
  *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -33,7 +33,6 @@
 #include "../../Include/RmlUi/Core/PropertyDefinition.h"
 
 namespace Rml {
-namespace Core {
 
 DecoratorNinePatch::DecoratorNinePatch()
 {
@@ -43,13 +42,13 @@ DecoratorNinePatch::~DecoratorNinePatch()
 {
 }
 
-bool DecoratorNinePatch::Initialise(const Rectangle& _rect_outer, const Rectangle& _rect_inner, const std::array<Property, 4>* _edges, const Texture& _texture)
+bool DecoratorNinePatch::Initialise(const Rectangle& _rect_outer, const Rectangle& _rect_inner, const Array<Property, 4>* _edges, const Texture& _texture)
 {
 	rect_outer = _rect_outer;
 	rect_inner = _rect_inner;
 
 	if (_edges)
-		edges = std::make_unique< std::array<Property, 4> >(*_edges);
+		edges = MakeUnique< Array<Property, 4> >(*_edges);
 
 	int texture_index = AddTexture(_texture);
 	return (texture_index >= 0);
@@ -128,8 +127,8 @@ DecoratorDataHandle DecoratorNinePatch::GenerateElementData(Element* element) co
 
 	/* Now we have all the coordinates we need. Expand the diagonal vertices to the 16 individual vertices. */
 
-	std::vector<Vertex>& vertices = data->GetVertices();
-	std::vector<int>& indices = data->GetIndices();
+	Vector<Vertex>& vertices = data->GetVertices();
+	Vector<int>& indices = data->GetIndices();
 
 	vertices.resize(4 * 4);
 
@@ -187,7 +186,7 @@ DecoratorNinePatchInstancer::DecoratorNinePatchInstancer()
 	edge_ids[3] = RegisterProperty("edge-left", "0px").AddParser("number_length_percent").GetId();
 
 	RegisterShorthand("edge", "edge-top, edge-right, edge-bottom, edge-left", ShorthandType::Box);
-	
+
 	RMLUI_ASSERT(sprite_outer_id != PropertyId::Invalid && sprite_inner_id != PropertyId::Invalid);
 
 	RegisterShorthand("decorator", "outer, inner, edge?", ShorthandType::RecursiveCommaSeparated);
@@ -202,7 +201,7 @@ SharedPtr<Decorator> DecoratorNinePatchInstancer::InstanceDecorator(const String
 	RMLUI_UNUSED(name);
 
 	bool edges_set = false;
-	std::array<Property,4> edges;
+	Array<Property,4> edges;
 	for (int i = 0; i < 4; i++)
 	{
 		edges[i] = *properties.GetProperty(edge_ids[i]);
@@ -240,7 +239,7 @@ SharedPtr<Decorator> DecoratorNinePatchInstancer::InstanceDecorator(const String
 		return nullptr;
 	}
 
-	auto decorator = std::make_shared<DecoratorNinePatch>();
+	auto decorator = MakeShared<DecoratorNinePatch>();
 
 	if (!decorator->Initialise(sprite_outer->rectangle, sprite_inner->rectangle, (edges_set ? &edges : nullptr), sprite_outer->sprite_sheet->texture))
 		return nullptr;
@@ -248,5 +247,4 @@ SharedPtr<Decorator> DecoratorNinePatchInstancer::InstanceDecorator(const String
 	return decorator;
 }
 
-}
-}
+} // namespace Rml

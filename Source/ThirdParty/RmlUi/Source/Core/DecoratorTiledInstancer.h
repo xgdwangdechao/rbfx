@@ -26,14 +26,13 @@
  *
  */
 
-#ifndef RMLUICOREDECORATORTILEDINSTANCER_H
-#define RMLUICOREDECORATORTILEDINSTANCER_H
+#ifndef RMLUI_CORE_DECORATORTILEDINSTANCER_H
+#define RMLUI_CORE_DECORATORTILEDINSTANCER_H
 
 #include "../../Include/RmlUi/Core/DecoratorInstancer.h"
 #include "DecoratorTiled.h"
 
 namespace Rml {
-namespace Core {
 
 class StyleSheet;
 
@@ -65,10 +64,8 @@ private:
 		PropertyId src, fit, align_x, align_y, orientation;
 	};
 
-	std::vector<TilePropertyIds> tile_property_ids;
+	Vector<TilePropertyIds> tile_property_ids;
 };
 
-}
-}
-
+} // namespace Rml
 #endif

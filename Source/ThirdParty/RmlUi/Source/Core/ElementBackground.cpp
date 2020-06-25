@@ -35,7 +35,6 @@
 
 
 namespace Rml {
-namespace Core {
 
 ElementBackground::ElementBackground(Element* _element) : geometry(_element)
 {
@@ -98,8 +97,8 @@ void ElementBackground::GenerateBackground()
 			num_boxes++;
 	}
 
-	std::vector< Vertex >& vertices = geometry.GetVertices();
-	std::vector< int >& indices = geometry.GetIndices();
+	Vector< Vertex >& vertices = geometry.GetVertices();
+	Vector< int >& indices = geometry.GetIndices();
 
 	int index_offset = 0;
 	vertices.resize(4 * num_boxes);
@@ -132,5 +131,4 @@ void ElementBackground::GenerateBackground(Vertex*& vertices, int*& indices, int
 	index_offset += 4;
 }
 
-}
-}
+} // namespace Rml

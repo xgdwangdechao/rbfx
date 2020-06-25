@@ -32,7 +32,6 @@
 #include "FreeTypeInterface.h"
 
 namespace Rml {
-namespace Core {
 
 FontFace::FontFace(FontFaceHandleFreetype _face, Style::FontStyle _style, Style::FontWeight _weight, bool _release_stream)
 {
@@ -78,7 +77,7 @@ FontFaceHandleDefault* FontFace::GetHandle(int size) {
 	}
 
 	// Construct and initialise the new handle.
-	auto handle = std::make_unique<FontFaceHandleDefault>();
+	auto handle = MakeUnique<FontFaceHandleDefault>();
 	if (!handle->Initialize(face, size))
 	{
 		handles[size] = nullptr;
@@ -94,5 +93,4 @@ FontFaceHandleDefault* FontFace::GetHandle(int size) {
 }
 
 
-}
-}
+} // namespace Rml

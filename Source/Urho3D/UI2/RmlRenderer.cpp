@@ -42,7 +42,7 @@ RmlRenderer::RmlRenderer(Context* context)
 {
 }
 
-void RmlRenderer::CompileGeometry(CompiledGeometryForRml& compiledGeometryOut, Rml::Core::Vertex* vertices, int numVertices, int* indices, int numIndices, const Rml::Core::TextureHandle texture)
+void RmlRenderer::CompileGeometry(CompiledGeometryForRml& compiledGeometryOut, Rml::Vertex* vertices, int numVertices, int* indices, int numIndices, const Rml::TextureHandle texture)
 {
     VertexBuffer* vertexBuffer;
     IndexBuffer* indexBuffer;
@@ -78,14 +78,14 @@ void RmlRenderer::CompileGeometry(CompiledGeometryForRml& compiledGeometryOut, R
     indexBuffer->SetDataRange(indices, 0, numIndices);
 }
 
-Rml::Core::CompiledGeometryHandle RmlRenderer::CompileGeometry(Rml::Core::Vertex* vertices, int numVertices, int* indices, int numIndices, const Rml::Core::TextureHandle texture)
+Rml::CompiledGeometryHandle RmlRenderer::CompileGeometry(Rml::Vertex* vertices, int numVertices, int* indices, int numIndices, const Rml::TextureHandle texture)
 {
     CompiledGeometryForRml* geom = new CompiledGeometryForRml();
     CompileGeometry(*geom, vertices, numVertices, indices, numIndices, texture);
-    return reinterpret_cast<Rml::Core::CompiledGeometryHandle>(geom);
+    return reinterpret_cast<Rml::CompiledGeometryHandle>(geom);
 }
 
-void RmlRenderer::RenderCompiledGeometry(Rml::Core::CompiledGeometryHandle geometryHandle, const Rml::Core::Vector2f& translation)
+void RmlRenderer::RenderCompiledGeometry(Rml::CompiledGeometryHandle geometryHandle, const Rml::Vector2f& translation)
 {
     CompiledGeometryForRml* geometry = reinterpret_cast<CompiledGeometryForRml*>(geometryHandle);
 
@@ -149,8 +149,8 @@ void RmlRenderer::RenderCompiledGeometry(Rml::Core::CompiledGeometryHandle geome
     graphics_->SetTexture(0, geometry->texture_);
 
     // Apply translation
-    Matrix3x4 trans(Matrix3x4::IDENTITY);
-    trans.SetTranslation(Vector3(translation.x, translation.y, 0.f));
+    Matrix3x4 trans(matrix_);
+    trans.SetTranslation({translation.x, translation.y, 0.f});
 
     graphics_->SetShaders(vs, ps);
 
@@ -195,17 +195,17 @@ void RmlRenderer::RenderCompiledGeometry(Rml::Core::CompiledGeometryHandle geome
     graphics_->Draw(TRIANGLE_LIST, 0, geometry->indexBuffer_->GetIndexCount(), 0, geometry->vertexBuffer_->GetVertexCount());
 }
 
-void RmlRenderer::RenderGeometry(Rml::Core::Vertex* vertices, int num_vertices, int* indices, int num_indices, Rml::Core::TextureHandle texture, const Rml::Core::Vector2f& translation)
+void RmlRenderer::RenderGeometry(Rml::Vertex* vertices, int num_vertices, int* indices, int num_indices, Rml::TextureHandle texture, const Rml::Vector2f& translation)
 {
     // Could this be optimized?
     CompiledGeometryForRml geometry;
     geometry.vertexBuffer_ = vertexBuffer_;
     geometry.indexBuffer_ = indexBuffer_;
     CompileGeometry(geometry, vertices, num_vertices, indices, num_indices, texture);
-    RenderCompiledGeometry(reinterpret_cast<Rml::Core::CompiledGeometryHandle>(&geometry), translation);
+    RenderCompiledGeometry(reinterpret_cast<Rml::CompiledGeometryHandle>(&geometry), translation);
 }
 
-void RmlRenderer::ReleaseCompiledGeometry(Rml::Core::CompiledGeometryHandle geometry)
+void RmlRenderer::ReleaseCompiledGeometry(Rml::CompiledGeometryHandle geometry)
 {
     delete reinterpret_cast<CompiledGeometryForRml*>(geometry);
 }
@@ -219,11 +219,11 @@ void RmlRenderer::SetScissorRegion(int x, int y, int width, int height)
 {
     scissor_.left_ = x;
     scissor_.top_ = y;
-    scissor_.bottom_ = height;
-    scissor_.right_ = width;
+    scissor_.bottom_ = y + height;
+    scissor_.right_ = x + width;
 }
 
-bool RmlRenderer::LoadTexture(Rml::Core::TextureHandle& textureOut, Rml::Core::Vector2i& sizeOut, const Rml::Core::String& source)
+bool RmlRenderer::LoadTexture(Rml::TextureHandle& textureOut, Rml::Vector2i& sizeOut, const Rml::String& source)
 {
     ResourceCache* cache = context_->GetSubsystem<ResourceCache>();
     Texture2D* texture = cache->GetResource<Texture2D>(source.c_str());
@@ -233,11 +233,11 @@ bool RmlRenderer::LoadTexture(Rml::Core::TextureHandle& textureOut, Rml::Core::V
         sizeOut.y = texture->GetHeight();
         texture->AddRef();
     }
-    textureOut = reinterpret_cast<Rml::Core::TextureHandle>(texture);
+    textureOut = reinterpret_cast<Rml::TextureHandle>(texture);
     return true;
 }
 
-bool RmlRenderer::GenerateTexture(Rml::Core::TextureHandle& handleOut, const Rml::Core::byte* source, const Rml::Core::Vector2i& size)
+bool RmlRenderer::GenerateTexture(Rml::TextureHandle& handleOut, const Rml::byte* source, const Rml::Vector2i& size)
 {
     Image image(context_);
     image.SetSize(size.x, size.y, 4);
@@ -245,17 +245,17 @@ bool RmlRenderer::GenerateTexture(Rml::Core::TextureHandle& handleOut, const Rml
     Texture2D* texture = context_->CreateObject<Texture2D>().Detach();
     texture->AddRef();
     texture->SetData(&image, true);
-    handleOut = reinterpret_cast<Rml::Core::TextureHandle>(texture);
+    handleOut = reinterpret_cast<Rml::TextureHandle>(texture);
     return true;
 }
 
-void RmlRenderer::ReleaseTexture(Rml::Core::TextureHandle textureHandle)
+void RmlRenderer::ReleaseTexture(Rml::TextureHandle textureHandle)
 {
     if (auto* texture = reinterpret_cast<Urho3D::Texture*>(textureHandle))
         texture->ReleaseRef();
 }
 
-void RmlRenderer::SetTransform(const Rml::Core::Matrix4f* transform)
+void RmlRenderer::SetTransform(const Rml::Matrix4f* transform)
 {
     if (transform)
         memcpy(&matrix_.m00_, transform->data(), sizeof(matrix_));

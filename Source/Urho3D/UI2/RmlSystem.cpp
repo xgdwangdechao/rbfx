@@ -44,7 +44,7 @@ double RmlSystem::GetElapsedTime()
     return context_->GetSubsystem<Time>()->GetElapsedTime();
 }
 
-int RmlSystem::TranslateString(Rml::Core::String& translated, const Rml::Core::String& input)
+int RmlSystem::TranslateString(Rml::String& translated, const Rml::String& input)
 {
     Localization* l18n = context_->GetSubsystem<Localization>();
     if (l18n->GetLanguageIndex() > -1)
@@ -56,22 +56,22 @@ int RmlSystem::TranslateString(Rml::Core::String& translated, const Rml::Core::S
     return 0;
 }
 
-bool RmlSystem::LogMessage(Rml::Core::Log::Type type, const Rml::Core::String& message)
+bool RmlSystem::LogMessage(Rml::Log::Type type, const Rml::String& message)
 {
     switch (type)
     {
-    case Rml::Core::Log::LT_ALWAYS:
-    case Rml::Core::Log::LT_ERROR:
-    case Rml::Core::Log::LT_ASSERT:
+    case Rml::Log::LT_ALWAYS:
+    case Rml::Log::LT_ERROR:
+    case Rml::Log::LT_ASSERT:
         URHO3D_LOGERROR(message.c_str());
         break;
-    case Rml::Core::Log::LT_WARNING:
+    case Rml::Log::LT_WARNING:
         URHO3D_LOGWARNING(message.c_str());
         break;
-    case Rml::Core::Log::LT_INFO:
+    case Rml::Log::LT_INFO:
         URHO3D_LOGINFO(message.c_str());
         break;
-    case Rml::Core::Log::LT_DEBUG:
+    case Rml::Log::LT_DEBUG:
         URHO3D_LOGDEBUG(message.c_str());
         break;
     default:
@@ -80,17 +80,17 @@ bool RmlSystem::LogMessage(Rml::Core::Log::Type type, const Rml::Core::String& m
     return true;
 }
 
-void RmlSystem::SetMouseCursor(const Rml::Core::String& cursor_name)
+void RmlSystem::SetMouseCursor(const Rml::String& cursor_name)
 {
     SystemInterface::SetMouseCursor(cursor_name);
 }
 
-void RmlSystem::SetClipboardText(const Rml::Core::String& text)
+void RmlSystem::SetClipboardText(const Rml::String& text)
 {
     SDL_SetClipboardText(text.c_str());
 }
 
-void RmlSystem::GetClipboardText(Rml::Core::String& text)
+void RmlSystem::GetClipboardText(Rml::String& text)
 {
     text = SDL_GetClipboardText();
 }

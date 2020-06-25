@@ -37,7 +37,7 @@ RmlFile::RmlFile(Urho3D::Context* context)
 
 }
 
-Rml::Core::FileHandle RmlFile::Open(const Rml::Core::String& path)
+Rml::FileHandle RmlFile::Open(const Rml::String& path)
 {
     SharedPtr<File> file(new File(context_));
     ResourceCache* cache = context_->GetSubsystem<ResourceCache>();
@@ -47,26 +47,26 @@ Rml::Core::FileHandle RmlFile::Open(const Rml::Core::String& path)
     {
         ea::string fullPath = AddTrailingSlash(prefix) + path.c_str();
         if (fs->Exists(fullPath) && file->Open(fullPath.c_str()))
-            return reinterpret_cast<Rml::Core::FileHandle>(file.Detach());
+            return reinterpret_cast<Rml::FileHandle>(file.Detach());
     }
 
     if (file->Open(path.c_str()))
-        return reinterpret_cast<Rml::Core::FileHandle>(file.Detach());
+        return reinterpret_cast<Rml::FileHandle>(file.Detach());
 
     return 0;
 }
 
-void RmlFile::Close(Rml::Core::FileHandle file)
+void RmlFile::Close(Rml::FileHandle file)
 {
     delete reinterpret_cast<File*>(file);
 }
 
-size_t RmlFile::Read(void* buffer, size_t size, Rml::Core::FileHandle file)
+size_t RmlFile::Read(void* buffer, size_t size, Rml::FileHandle file)
 {
     return reinterpret_cast<File*>(file)->Read(buffer, size);
 }
 
-bool RmlFile::Seek(Rml::Core::FileHandle file, long offset, int origin)
+bool RmlFile::Seek(Rml::FileHandle file, long offset, int origin)
 {
     File* fp = reinterpret_cast<File*>(file);
     if (origin == SEEK_CUR)
@@ -76,12 +76,12 @@ bool RmlFile::Seek(Rml::Core::FileHandle file, long offset, int origin)
     return fp->Seek(offset) == offset;
 }
 
-size_t RmlFile::Tell(Rml::Core::FileHandle file)
+size_t RmlFile::Tell(Rml::FileHandle file)
 {
     return reinterpret_cast<File*>(file)->Tell();
 }
 
-size_t RmlFile::Length(Rml::Core::FileHandle file)
+size_t RmlFile::Length(Rml::FileHandle file)
 {
     return reinterpret_cast<File*>(file)->GetSize();
 }

@@ -45,21 +45,21 @@ struct CompiledGeometryForRml
 	SharedPtr<Texture> texture_;
 };
 
-class RmlRenderer : public RefCounted, public Rml::Core::RenderInterface
+class RmlRenderer : public RefCounted, public Rml::RenderInterface
 {
 public:
     explicit RmlRenderer(Context* context);
-    void CompileGeometry(CompiledGeometryForRml& compiledGeometryOut, Rml::Core::Vertex* vertices, int numVertices, int* indices, int numIndices, const Rml::Core::TextureHandle texture);
-    Rml::Core::CompiledGeometryHandle CompileGeometry(Rml::Core::Vertex* vertices, int numVertices, int* indices, int numIndices, const Rml::Core::TextureHandle texture) override;
-    void RenderCompiledGeometry(Rml::Core::CompiledGeometryHandle geometryHandle, const Rml::Core::Vector2f& translation) override;
-	void RenderGeometry(Rml::Core::Vertex* vertices, int num_vertices, int* indices, int num_indices, Rml::Core::TextureHandle texture, const Rml::Core::Vector2f& translation) override;
-    void ReleaseCompiledGeometry(Rml::Core::CompiledGeometryHandle geometry) override;
+    void CompileGeometry(CompiledGeometryForRml& compiledGeometryOut, Rml::Vertex* vertices, int numVertices, int* indices, int numIndices, const Rml::TextureHandle texture);
+    Rml::CompiledGeometryHandle CompileGeometry(Rml::Vertex* vertices, int numVertices, int* indices, int numIndices, const Rml::TextureHandle texture) override;
+    void RenderCompiledGeometry(Rml::CompiledGeometryHandle geometryHandle, const Rml::Vector2f& translation) override;
+	void RenderGeometry(Rml::Vertex* vertices, int num_vertices, int* indices, int num_indices, Rml::TextureHandle texture, const Rml::Vector2f& translation) override;
+    void ReleaseCompiledGeometry(Rml::CompiledGeometryHandle geometry) override;
     void EnableScissorRegion(bool enable) override;
     void SetScissorRegion(int x, int y, int width, int height) override;
-    bool LoadTexture(Rml::Core::TextureHandle& textureOut, Rml::Core::Vector2i& sizeOut, const Rml::Core::String& source) override;
-    bool GenerateTexture(Rml::Core::TextureHandle& handleOut, const Rml::Core::byte* source, const Rml::Core::Vector2i& size) override;
-    void ReleaseTexture(Rml::Core::TextureHandle textureHandle) override;
-    void SetTransform(const Rml::Core::Matrix4f* transform) override;
+    bool LoadTexture(Rml::TextureHandle& textureOut, Rml::Vector2i& sizeOut, const Rml::String& source) override;
+    bool GenerateTexture(Rml::TextureHandle& handleOut, const Rml::byte* source, const Rml::Vector2i& size) override;
+    void ReleaseTexture(Rml::TextureHandle textureHandle) override;
+    void SetTransform(const Rml::Matrix4f* transform) override;
 
 // private:
     bool scrissorEnabled_ = false;

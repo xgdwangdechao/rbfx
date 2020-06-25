@@ -26,7 +26,7 @@
  *
  */
 
-  
+
 #include "../../Include/RmlUi/Core/Element.h"
 #include "../../Include/RmlUi/Core/Context.h"
 #include "../../Include/RmlUi/Core/Core.h"
@@ -43,7 +43,6 @@
 #include "../../Include/RmlUi/Core/PropertyDefinition.h"
 #include "../../Include/RmlUi/Core/StyleSheetSpecification.h"
 #include "../../Include/RmlUi/Core/TransformPrimitive.h"
-#include "../../Include/RmlUi/Core/TransformState.h"
 #include "Clock.h"
 #include "ComputeProperty.h"
 #include "ElementAnimation.h"
@@ -59,12 +58,13 @@
 #include "PropertiesIterator.h"
 #include "Pool.h"
 #include "StyleSheetParser.h"
-#include "StringCache.h"
+#include "TransformState.h"
+#include "TransformUtilities.h"
 #include "XMLParseTools.h"
 #include <algorithm>
+#include <cmath>
 
 namespace Rml {
-namespace Core {
 
 /**
 	STL function object for sorting elements by z-type (ie, float-types before general types, etc).
@@ -73,7 +73,7 @@ namespace Core {
 class ElementSortZOrder
 {
 public:
-	bool operator()(const std::pair< Element*, float >& lhs, const std::pair< Element*, float >& rhs) const
+	bool operator()(const Pair< Element*, float >& lhs, const Pair< Element*, float >& rhs) const
 	{
 		return lhs.second < rhs.second;
 	}
@@ -114,7 +114,7 @@ static Pool< ElementMeta > element_meta_chunk_pool(200, true);
 
 
 /// Constructs a new RmlUi element.
-Element::Element(const String& tag) : tag(tag), relative_offset_base(0, 0), relative_offset_position(0, 0), absolute_offset(0, 0), scroll_offset(0, 0), content_offset(0, 0), content_box(0, 0), 
+Element::Element(const String& tag) : tag(tag), relative_offset_base(0, 0), relative_offset_position(0, 0), absolute_offset(0, 0), scroll_offset(0, 0), content_offset(0, 0), content_box(0, 0),
 transform_state(), dirty_transform(false), dirty_perspective(false), dirty_animation(false), dirty_transition(false)
 {
 	RMLUI_ASSERT(tag == StringUtilities::ToLower(tag));
@@ -153,7 +153,7 @@ transform_state(), dirty_transform(false), dirty_perspective(false), dirty_anima
 
 Element::~Element()
 {
-	RMLUI_ASSERT(parent == nullptr);	
+	RMLUI_ASSERT(parent == nullptr);
 
 	PluginRegistry::NotifyElementDestroy(this);
 
@@ -178,7 +178,11 @@ Element::~Element()
 
 void Element::Update(float dp_ratio)
 {
+#ifdef RMLUI_ENABLE_PROFILING
+	auto name = GetAddress(false, false);
 	RMLUI_ZoneScoped;
+	RMLUI_ZoneText(name.c_str(), name.size());
+#endif
 
 	OnUpdate();
 
@@ -364,7 +368,7 @@ String Element::GetAddress(bool include_pseudo_classes, bool include_parents) co
 
 	if (include_pseudo_classes)
 	{
-		const PseudoClassList& pseudo_classes = meta->style.GetActivePseudoClasses();		
+		const PseudoClassList& pseudo_classes = meta->style.GetActivePseudoClasses();
 		for (PseudoClassList::const_iterator i = pseudo_classes.begin(); i != pseudo_classes.end(); ++i)
 		{
 			address += ":";
@@ -520,7 +524,7 @@ const Box& Element::GetBox(int index)
 {
 	if (index < 1)
 		return main_box;
-	
+
 	int additional_box_index = index - 1;
 	if (additional_box_index >= (int)additional_boxes.size())
 		return main_box;
@@ -672,7 +676,7 @@ float Element::ResolveNumericProperty(const String& property_name)
 		relative_target = property->definition->GetRelativeTarget();
 
 	float result = meta->style.ResolveLength(property, relative_target);
-	
+
 	return result;
 }
 
@@ -695,7 +699,7 @@ Vector2f Element::GetContainingBlock()
 			containing_block = parent_box.GetSize(Box::PADDING);
 		}
 	}
-	
+
 	return containing_block;
 }
 
@@ -753,7 +757,7 @@ bool Element::Project(Vector2f& point) const noexcept
 		Vector3f ray = local_points[1] - local_points[0];
 
 		// Only continue if we are not close to parallel with the plane.
-		if(std::abs(ray.z) > 1.0f)
+		if(std::fabs(ray.z) > 1.0f)
 		{
 			// Solving the line equation p = p0 + t*ray for t, knowing that p.z = 0, produces the following.
 			float t = -local_points[0].z / ray.z;
@@ -770,7 +774,7 @@ bool Element::Project(Vector2f& point) const noexcept
 
 PropertiesIteratorView Element::IterateLocalProperties() const
 {
-	return PropertiesIteratorView(std::make_unique<PropertiesIterator>(meta->style.Iterate()));
+	return PropertiesIteratorView(MakeUnique<PropertiesIterator>(meta->style.Iterate()));
 }
 
 
@@ -1349,7 +1353,7 @@ Element* Element::InsertBefore(ElementPtr child, Element* adjacent_element)
 	else
 	{
 		child_ptr = AppendChild(std::move(child));
-	}	
+	}
 
 	return child_ptr;
 }
@@ -1517,17 +1521,17 @@ DataModel* Element::GetDataModel() const
 {
 	return data_model;
 }
-	
+
 int Element::GetClippingIgnoreDepth()
 {
 	if (clipping_state_dirty)
 	{
 		IsClippingEnabled();
 	}
-	
+
 	return clipping_ignore_depth;
 }
-	
+
 bool Element::IsClippingEnabled()
 {
 	if (clipping_state_dirty)
@@ -1537,13 +1541,13 @@ bool Element::IsClippingEnabled()
 		// Is clipping enabled for this element, yes unless both overlow properties are set to visible
 		clipping_enabled = computed.overflow_x != Style::Overflow::Visible
 							|| computed.overflow_y != Style::Overflow::Visible;
-		
+
 		// Get the clipping ignore depth from the clip property
 		clipping_ignore_depth = computed.clip.number;
 
 		clipping_state_dirty = false;
 	}
-	
+
 	return clipping_enabled;
 }
 
@@ -1553,7 +1557,7 @@ RenderInterface* Element::GetRenderInterface()
 	if (Context* context = GetContext())
 		return context->GetRenderInterface();
 
-	return Rml::Core::GetRenderInterface();
+	return ::Rml::GetRenderInterface();
 }
 
 void Element::SetInstancer(ElementInstancer* _instancer)
@@ -1613,12 +1617,21 @@ void Element::OnAttributeChange(const ElementAttributes& changed_attributes)
 	it = changed_attributes.find("style");
 	if (it != changed_attributes.end())
 	{
-		PropertyDictionary properties;
-		StyleSheetParser parser;
-		parser.ParseProperties(properties, it->second.Get<String>());
+		if (it->second.GetType() == Variant::STRING)
+		{
+			PropertyDictionary properties;
+			StyleSheetParser parser;
+			parser.ParseProperties(properties, it->second.GetReference<String>());
 
-		for (auto& id_property_pair : properties.GetProperties())
-			meta->style.SetProperty(id_property_pair.first, id_property_pair.second);
+			for (const auto& name_value : properties.GetProperties())
+			{
+				meta->style.SetProperty(name_value.first, name_value.second);
+			}
+		}
+		else if (it->second.GetType() != Variant::NONE)
+		{
+			Log::Message(Log::LT_WARNING, "Invalid 'style' attribute, string type required. In element: %s", GetAddress().c_str());
+		}
 	}
 }
 
@@ -1631,7 +1644,7 @@ void Element::OnPropertyChange(const PropertyIdSet& changed_properties)
 	{
 		// Force a relayout if any of the changed properties require it.
 		const PropertyIdSet changed_properties_forcing_layout = (changed_properties & StyleSheetSpecification::GetRegisteredPropertiesForcingLayout());
-		
+
 		if(!changed_properties_forcing_layout.Empty())
 			DirtyLayout();
 	}
@@ -1642,7 +1655,7 @@ void Element::OnPropertyChange(const PropertyIdSet& changed_properties)
 		changed_properties.Contains(PropertyId::Display))
 	{
 		bool new_visibility = (meta->computed_values.display != Style::Display::None && meta->computed_values.visibility == Style::Visibility::Visible);
-			
+
 		if (visible != new_visibility)
 		{
 			visible = new_visibility;
@@ -1725,7 +1738,7 @@ void Element::OnPropertyChange(const PropertyIdSet& changed_properties)
 		changed_properties.Contains(PropertyId::ImageColor)) {
 		meta->background.DirtyBackground();
     }
-	
+
 	// Dirty the decoration if it's changed.
 	if (changed_properties.Contains(PropertyId::Decorator) ||
 		changed_properties.Contains(PropertyId::Opacity) ||
@@ -1745,7 +1758,7 @@ void Element::OnPropertyChange(const PropertyIdSet& changed_properties)
 		changed_properties.Contains(PropertyId::Opacity))
 		meta->border.DirtyBorder();
 
-	
+
 	// Check for clipping state changes
 	if (changed_properties.Contains(PropertyId::Clip) ||
 		changed_properties.Contains(PropertyId::OverflowX) ||
@@ -1784,12 +1797,12 @@ void Element::OnPropertyChange(const PropertyIdSet& changed_properties)
 }
 
 // Called when a child node has been added somewhere in the hierarchy
-void Element::OnChildAdd(Element* child)
+void Element::OnChildAdd(Element* /*child*/)
 {
 }
 
 // Called when a child node has been removed somewhere in the hierarchy
-void Element::OnChildRemove(Element* child)
+void Element::OnChildRemove(Element* /*child*/)
 {
 }
 
@@ -1858,10 +1871,10 @@ void Element::ProcessDefaultAction(Event& event)
 			SetPseudoClass("hover", false);
 			break;
 		case EventId::Focus:
-			SetPseudoClass(FOCUS, true);
+			SetPseudoClass("focus", true);
 			break;
 		case EventId::Blur:
-			SetPseudoClass(FOCUS, false);
+			SetPseudoClass("focus", false);
 			break;
 		default:
 			break;
@@ -1927,7 +1940,7 @@ void Element::SetOwnerDocument(ElementDocument* document)
 	}
 }
 
-void Element::SetDataModel(DataModel* new_data_model) 
+void Element::SetDataModel(DataModel* new_data_model)
 {
 	RMLUI_ASSERTMSG(!data_model || !new_data_model, "We must either attach a new data model, or detach the old one.");
 
@@ -1955,7 +1968,7 @@ void Element::Release()
 }
 
 void Element::SetParent(Element* _parent)
-{	
+{
 	// Assumes we are already detached from the hierarchy or we are detaching now.
 	RMLUI_ASSERT(!parent || !_parent);
 
@@ -1979,7 +1992,7 @@ void Element::SetParent(Element* _parent)
 		if (data_model)
 			SetDataModel(nullptr);
 	}
-	else 
+	else
 	{
 		auto it = attributes.find("data-model");
 		if (it == attributes.end())
@@ -2100,7 +2113,7 @@ void Element::BuildStackingContext(ElementList* new_stacking_context)
 	// Build the list of ordered children. Our child list is sorted within the stacking context so stacked elements
 	// will render in the right order; ie, positioned elements will render on top of inline elements, which will render
 	// on top of floated elements, which will render on top of block elements.
-	std::vector< std::pair< Element*, float > > ordered_children;
+	Vector< Pair< Element*, float > > ordered_children;
 	for (size_t i = 0; i < children.size(); ++i)
 	{
 		Element* child = children[i].get();
@@ -2108,7 +2121,7 @@ void Element::BuildStackingContext(ElementList* new_stacking_context)
 		if (!child->IsVisible())
 			continue;
 
-		std::pair< Element*, float > ordered_child;
+		Pair< Element*, float > ordered_child;
 		ordered_child.first = child;
 
 		if (child->GetPosition() != Style::Position::Static)
@@ -2225,7 +2238,7 @@ ElementAnimationList::iterator Element::StartAnimation(PropertyId property_id, c
 		value = *start_value;
 		if (!value.definition)
 			if(auto default_value = GetProperty(property_id))
-				value.definition = default_value->definition;	
+				value.definition = default_value->definition;
 	}
 	else if (auto default_value = GetProperty(property_id))
 	{
@@ -2238,7 +2251,7 @@ ElementAnimationList::iterator Element::StartAnimation(PropertyId property_id, c
 		double start_time = Clock::GetElapsedTime() + (double)delay;
 		*it = ElementAnimation{ property_id, origin, value, *this, start_time, 0.0f, num_iterations, alternate_direction };
 	}
-	
+
 	if(!it->IsInitalized())
 	{
 		animations.erase(it);
@@ -2370,12 +2383,15 @@ void Element::HandleAnimationProperty()
 		bool element_has_animations = (!animation_list.empty() || !animations.empty());
 		StyleSheet* stylesheet = nullptr;
 
-		if (element_has_animations && (stylesheet = GetStyleSheet().get()))
+		if (element_has_animations)
+			stylesheet = GetStyleSheet().get();
+
+		if (stylesheet)
 		{
 			// Remove existing animations
 			{
 				// We only touch the animations that originate from the 'animation' property.
-				auto it_remove = std::partition(animations.begin(), animations.end(), 
+				auto it_remove = std::partition(animations.begin(), animations.end(),
 					[](const ElementAnimation & animation) { return animation.GetOrigin() != ElementAnimationOrigin::Animation; }
 				);
 
@@ -2437,8 +2453,8 @@ void Element::AdvanceAnimations()
 		// Move all completed animations to the end of the list
 		auto it_completed = std::partition(animations.begin(), animations.end(), [](const ElementAnimation& animation) { return !animation.IsComplete(); });
 
-		std::vector<Dictionary> dictionary_list;
-		std::vector<bool> is_transition;
+		Vector<Dictionary> dictionary_list;
+		Vector<bool> is_transition;
 		dictionary_list.reserve(animations.end() - it_completed);
 		is_transition.reserve(animations.end() - it_completed);
 
@@ -2482,12 +2498,12 @@ void Element::UpdateTransformState()
 
 	const Vector2f pos = GetAbsoluteOffset(Box::BORDER);
 	const Vector2f size = GetBox().GetSize(Box::BORDER);
-	
+
 	bool perspective_or_transform_changed = false;
 
 	if (dirty_perspective)
 	{
-		// If perspective is set on this element, then it applies to our children. We just calculate it here, 
+		// If perspective is set on this element, then it applies to our children. We just calculate it here,
 		// and let the children's transform update merge it with their transform.
 		bool had_perspective = (transform_state && transform_state->GetLocalPerspective());
 
@@ -2522,7 +2538,7 @@ void Element::UpdateTransformState()
 			);
 
 			if (!transform_state)
-				transform_state = std::make_unique<TransformState>();
+				transform_state = MakeUnique<TransformState>();
 
 			perspective_or_transform_changed |= transform_state->SetLocalPerspective(&perspective);
 		}
@@ -2550,14 +2566,10 @@ void Element::UpdateTransformState()
 			const int n = computed.transform->GetNumPrimitives();
 			for (int i = 0; i < n; ++i)
 			{
-				const Transforms::Primitive& primitive = computed.transform->GetPrimitive(i);
-
-				Matrix4f matrix;
-				if (primitive.ResolveTransform(matrix, *this))
-				{
-					transform *= matrix;
-					have_transform = true;
-				}
+				const TransformPrimitive& primitive = computed.transform->GetPrimitive(i);
+				Matrix4f matrix = TransformUtilities::ResolveTransform(primitive, *this);
+				transform *= matrix;
+				have_transform = true;
 			}
 
 			if(have_transform)
@@ -2607,7 +2619,7 @@ void Element::UpdateTransformState()
 		if (have_transform)
 		{
 			if (!transform_state)
-				transform_state = std::make_unique<TransformState>();
+				transform_state = MakeUnique<TransformState>();
 
 			perspective_or_transform_changed |= transform_state->SetTransform(&transform);
 		}
@@ -2631,5 +2643,4 @@ void Element::UpdateTransformState()
 	}
 }
 
-}
-}
+} // namespace Rml

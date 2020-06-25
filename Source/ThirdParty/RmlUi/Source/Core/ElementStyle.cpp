@@ -51,7 +51,6 @@
 
 
 namespace Rml {
-namespace Core {
 
 ElementStyle::ElementStyle(Element* _element)
 {
@@ -876,8 +875,13 @@ PropertyIdSet ElementStyle::ComputeValues(Style::ComputedValues& values, const S
 			else
 				values.font_effect.reset();
 			break;
-
-		default:
+		// Unhandled properties. Must be manually retrieved with 'GetProperty()'.
+		case PropertyId::FillImage:
+			break;
+		// Invalid properties
+		case PropertyId::Invalid:
+		case PropertyId::NumDefinedIds:
+		case PropertyId::MaxNumIds:
 			break;
 		}
 	}
@@ -906,5 +910,4 @@ PropertyIdSet ElementStyle::ComputeValues(Style::ComputedValues& values, const S
 	return result;
 }
 
-}
-}
+} // namespace Rml

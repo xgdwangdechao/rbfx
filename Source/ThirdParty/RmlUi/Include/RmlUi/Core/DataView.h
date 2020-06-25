@@ -26,17 +26,15 @@
  *
  */
 
-#ifndef RMLUICOREDATAVIEW_H
-#define RMLUICOREDATAVIEW_H
+#ifndef RMLUI_CORE_DATAVIEW_H
+#define RMLUI_CORE_DATAVIEW_H
 
 #include "Header.h"
 #include "Types.h"
 #include "Traits.h"
 #include "DataTypes.h"
-#include <unordered_map>
 
 namespace Rml {
-namespace Core {
 
 class Element;
 class DataModel;
@@ -62,7 +60,7 @@ public:
 
 	Data views are used to present a data variable in the document by different means.
 	A data view is declared in the document by the element attribute:
-	
+
 	    data-[type]-[modifier]="[expression]"
 
 	The modifier may or may not be required depending on the data view.
@@ -92,10 +90,10 @@ public:
 
 	// Returns the depth of the attached element in the document tree.
 	int GetElementDepth() const;
-	
+
 	// Returns true if the element still exists.
 	bool IsValid() const;
-	
+
 protected:
 	DataView(Element* element);
 
@@ -118,18 +116,16 @@ public:
 	bool Update(DataModel& model, const DirtyVariables& dirty_variables);
 
 private:
-	using DataViewList = std::vector<DataViewPtr>;
+	using DataViewList = Vector<DataViewPtr>;
 
 	DataViewList views;
-	
+
 	DataViewList views_to_add;
 	DataViewList views_to_remove;
 
-	using NameViewMap = std::unordered_multimap<String, DataView*>;
+	using NameViewMap = UnorderedMultimap<String, DataView*>;
 	NameViewMap name_view_map;
 };
 
-}
-}
-
+} // namespace Rml
 #endif

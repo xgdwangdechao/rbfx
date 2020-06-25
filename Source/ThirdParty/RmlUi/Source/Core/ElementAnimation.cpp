@@ -28,6 +28,7 @@
 
 #include "ElementAnimation.h"
 #include "ElementStyle.h"
+#include "TransformUtilities.h"
 #include "../../Include/RmlUi/Core/Element.h"
 #include "../../Include/RmlUi/Core/PropertyDefinition.h"
 #include "../../Include/RmlUi/Core/StyleSheetSpecification.h"
@@ -35,8 +36,6 @@
 #include "../../Include/RmlUi/Core/TransformPrimitive.h"
 
 namespace Rml {
-namespace Core {
-
 
 static Colourf ColourToLinearSpace(Colourb c)
 {
@@ -52,10 +51,10 @@ static Colourf ColourToLinearSpace(Colourb c)
 static Colourb ColourFromLinearSpace(Colourf c)
 {
 	Colourb result;
-	result.red = (Rml::Core::byte)Math::Clamp(c.red*c.red*255.f, 0.0f, 255.f);
-	result.green = (Rml::Core::byte)Math::Clamp(c.green*c.green*255.f, 0.0f, 255.f);
-	result.blue = (Rml::Core::byte)Math::Clamp(c.blue*c.blue*255.f, 0.0f, 255.f);
-	result.alpha = (Rml::Core::byte)Math::Clamp(c.alpha*255.f, 0.0f, 255.f);
+	result.red = (byte)Math::Clamp(c.red*c.red*255.f, 0.0f, 255.f);
+	result.green = (byte)Math::Clamp(c.green*c.green*255.f, 0.0f, 255.f);
+	result.blue = (byte)Math::Clamp(c.blue*c.blue*255.f, 0.0f, 255.f);
+	result.alpha = (byte)Math::Clamp(c.alpha*255.f, 0.0f, 255.f);
 	return result;
 }
 
@@ -64,16 +63,15 @@ static bool CombineAndDecompose(Transform& t, Element& e)
 {
 	Matrix4f m = Matrix4f::Identity();
 
-	for (auto& primitive : t.GetPrimitives())
+	for (TransformPrimitive& primitive : t.GetPrimitives())
 	{
-		Matrix4f m_primitive;
-		if (primitive.ResolveTransform(m_primitive, e))
-			m *= m_primitive;
+		Matrix4f m_primitive = TransformUtilities::ResolveTransform(primitive, e);
+		m *= m_primitive;
 	}
 
 	Transforms::DecomposedMatrix4 decomposed;
 
-	if (!decomposed.Decompose(m))
+	if (!TransformUtilities::Decompose(decomposed, m))
 		return false;
 
 	t.ClearPrimitives();
@@ -134,8 +132,6 @@ static Property InterpolateProperties(const Property & p0, const Property& p1, f
 
 	if (p0.unit == Property::TRANSFORM && p1.unit == Property::TRANSFORM)
 	{
-		using namespace Rml::Core::Transforms;
-
 		auto& t0 = p0.value.GetReference<TransformPtr>();
 		auto& t1 = p1.value.GetReference<TransformPtr>();
 
@@ -154,8 +150,8 @@ static Property InterpolateProperties(const Property & p0, const Property& p1, f
 
 		for (size_t i = 0; i < prim0.size(); i++)
 		{
-			Primitive p = prim0[i];
-			if (!p.InterpolateWith(prim1[i], alpha))
+			TransformPrimitive p = prim0[i];
+			if (!TransformUtilities::InterpolateWith(p, prim1[i], alpha))
 			{
 				RMLUI_ERRORMSG("Transform primitives can not be interpolated. Were the transforms properly prepared for interpolation?");
 				return Property{ t0, Property::TRANSFORM };
@@ -193,16 +189,16 @@ static PrepareTransformResult PrepareTransformPair(Transform& t0, Transform& t1,
 
 		for (size_t i = 0; i < prims0.size(); i++)
 		{
-			auto p0_type = prims0[i].primitive.type;
-			auto p1_type = prims1[i].primitive.type;
+			auto p0_type = prims0[i].type;
+			auto p1_type = prims1[i].type;
 
 			// See if they are the same or can be converted to a matching generic type.
-			if (Primitive::TryConvertToMatchingGenericType(prims0[i], prims1[i]))
+			if (TransformUtilities::TryConvertToMatchingGenericType(prims0[i], prims1[i]))
 			{
-				if (prims0[i].primitive.type != p0_type)
-					(int&)result |= (int)PrepareTransformResult::ChangedT0;
-				if (prims1[i].primitive.type != p1_type)
-					(int&)result |= (int)PrepareTransformResult::ChangedT1;
+				if (prims0[i].type != p0_type)
+					result = PrepareTransformResult((int)result | (int)PrepareTransformResult::ChangedT0);
+				if (prims1[i].type != p1_type)
+					result = PrepareTransformResult((int)result | (int)PrepareTransformResult::ChangedT1);
 			}
 			else
 			{
@@ -229,7 +225,7 @@ static PrepareTransformResult PrepareTransformPair(Transform& t0, Transform& t1,
 		auto& small = (prims0_smallest ? prims0 : prims1);
 		auto& big = (prims0_smallest ? prims1 : prims0);
 
-		std::vector<size_t> matching_indices; // Indices into 'big' for matching types
+		Vector<size_t> matching_indices; // Indices into 'big' for matching types
 		matching_indices.reserve(small.size() + 1);
 
 		size_t i_big = 0;
@@ -243,13 +239,13 @@ static PrepareTransformResult PrepareTransformPair(Transform& t0, Transform& t1,
 
 			for (; i_big < big.size(); i_big++)
 			{
-				auto big_type = big[i_big].primitive.type;
+				auto big_type = big[i_big].type;
 
-				if (Primitive::TryConvertToMatchingGenericType(small[i_small], big[i_big]))
+				if (TransformUtilities::TryConvertToMatchingGenericType(small[i_small], big[i_big]))
 				{
 					// They matched exactly or in their more generic form. One or both primitives may have been converted.
 					match_success = true;
-					if (big[i_big].primitive.type != big_type)
+					if (big[i_big].type != big_type)
 						changed_big = true;
 				}
 
@@ -277,8 +273,8 @@ static PrepareTransformResult PrepareTransformPair(Transform& t0, Transform& t1,
 			{
 				for (size_t i = i0; i < match_index; i++)
 				{
-					Primitive p = big[i];
-					p.SetIdentity();
+					TransformPrimitive p = big[i];
+					TransformUtilities::SetIdentity(p);
 					small.insert(small.begin() + i, p);
 				}
 
@@ -308,7 +304,7 @@ static PrepareTransformResult PrepareTransformPair(Transform& t0, Transform& t1,
 }
 
 
-static bool PrepareTransforms(std::vector<AnimationKey>& keys, Element& element, int start_index)
+static bool PrepareTransforms(Vector<AnimationKey>& keys, Element& element, int start_index)
 {
 	bool result = true;
 
@@ -316,16 +312,17 @@ static bool PrepareTransforms(std::vector<AnimationKey>& keys, Element& element,
 	for (int i = start_index; i < (int)keys.size(); i++)
 	{
 		Property& property = keys[i].property;
+		RMLUI_ASSERT(property.value.GetType() == Variant::TRANSFORMPTR);
 
 		if (!property.value.GetReference<TransformPtr>())
-			property.value = std::make_shared<Transform>();
+			property.value = MakeShared<Transform>();
 
 		bool must_decompose = false;
 		Transform& transform = *property.value.GetReference<TransformPtr>();
 
-		for (auto& primitive : transform.GetPrimitives())
+		for (TransformPrimitive& primitive : transform.GetPrimitives())
 		{
-			if (!primitive.PrepareForInterpolation(element))
+			if (!TransformUtilities::PrepareForInterpolation(primitive, element))
 			{
 				must_decompose = true;
 				break;
@@ -333,7 +330,7 @@ static bool PrepareTransforms(std::vector<AnimationKey>& keys, Element& element,
 		}
 
 		if (must_decompose)
-			result = CombineAndDecompose(transform, element);
+			result &= CombineAndDecompose(transform, element);
 	}
 
 	if (!result)
@@ -349,7 +346,7 @@ static bool PrepareTransforms(std::vector<AnimationKey>& keys, Element& element,
 	int count_iterations = -1;
 	const int max_iterations = 3 * N;
 
-	std::vector<bool> dirty_list(N + 1, false);
+	Vector<bool> dirty_list(N + 1, false);
 	dirty_list[start_index] = true;
 
 	// For each pair of keys, match the transform primitives such that they can be interpolated during animation update
@@ -370,13 +367,13 @@ static bool PrepareTransforms(std::vector<AnimationKey>& keys, Element& element,
 		auto& t0 = prop0.value.GetReference<TransformPtr>();
 		auto& t1 = prop1.value.GetReference<TransformPtr>();
 
-		auto result = PrepareTransformPair(*t0, *t1, element);
+		auto prepare_result = PrepareTransformPair(*t0, *t1, element);
 
-		if (result == PrepareTransformResult::Invalid)
+		if (prepare_result == PrepareTransformResult::Invalid)
 			return false;
 
-		bool changed_t0 = ((int)result & (int)PrepareTransformResult::ChangedT0);
-		bool changed_t1 = ((int)result & (int)PrepareTransformResult::ChangedT1);
+		bool changed_t0 = ((int)prepare_result & (int)PrepareTransformResult::ChangedT0);
+		bool changed_t1 = ((int)prepare_result & (int)PrepareTransformResult::ChangedT1);
 
 		dirty_list[i] = false;
 		dirty_list[i - 1] = dirty_list[i - 1] || changed_t0;
@@ -542,5 +539,4 @@ Property ElementAnimation::UpdateAndGetProperty(double world_time, Element& elem
 }
 
 
-}
-}
+} // namespace Rml

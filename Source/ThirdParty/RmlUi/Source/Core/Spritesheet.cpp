@@ -31,7 +31,6 @@
 #include "../../Include/RmlUi/Core/Log.h"
 
 namespace Rml {
-namespace Core {
 
 bool SpritesheetList::AddSpriteSheet(const String& name, const String& image_source, const String& definition_source, int definition_line_number, const SpriteDefinitionList& sprite_definitions)
 {
@@ -39,7 +38,7 @@ bool SpritesheetList::AddSpriteSheet(const String& name, const String& image_sou
 	Texture texture;
 	texture.Set(image_source, definition_source);
 
-	auto sprite_sheet = std::make_shared<Spritesheet>(name, image_source, definition_source, definition_line_number, texture);
+	auto sprite_sheet = MakeShared<Spritesheet>(name, image_source, definition_source, definition_line_number, texture);
 	auto result = spritesheet_map.emplace(name, sprite_sheet);
 	if (!result.second)
 	{
@@ -54,8 +53,8 @@ bool SpritesheetList::AddSpriteSheet(const String& name, const String& image_sou
 	{
 		const String& sprite_name = sprite_definition.first;
 		const Rectangle& sprite_rectangle = sprite_definition.second;
-		auto result = sprite_map.emplace(sprite_name, Sprite{ sprite_rectangle, sprite_sheet.get() });
-		if (result.second)
+		auto sprite_result = sprite_map.emplace(sprite_name, Sprite{ sprite_rectangle, sprite_sheet.get() });
+		if (sprite_result.second)
 		{
 			sprite_names.push_back(sprite_name);
 		}
@@ -153,5 +152,4 @@ String SpritesheetList::ToString() const
 	return result;
 }
 
-}
-}
+} // namespace Rml

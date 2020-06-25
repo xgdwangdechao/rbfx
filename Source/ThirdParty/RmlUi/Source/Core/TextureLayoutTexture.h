@@ -33,7 +33,6 @@
 #include "TextureLayoutRow.h"
 
 namespace Rml {
-namespace Core {
 
 class TextureLayout;
 class TextureResource;
@@ -67,13 +66,11 @@ public:
 	UniquePtr<byte[]> AllocateTexture();
 
 private:
-	using RowList = std::vector< TextureLayoutRow >;
+	using RowList = Vector< TextureLayoutRow >;
 
 	Vector2i dimensions;
 	RowList rows;
 };
 
-}
-}
-
+} // namespace Rml
 #endif

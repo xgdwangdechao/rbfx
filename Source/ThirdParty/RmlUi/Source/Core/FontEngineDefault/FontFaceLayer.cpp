@@ -30,7 +30,6 @@
 #include "FontFaceHandleDefault.h"
 
 namespace Rml {
-namespace Core {
 
 FontFaceLayer::FontFaceLayer(const SharedPtr<const FontEffect>& _effect) : colour(255, 255, 255)
 {
@@ -48,9 +47,6 @@ bool FontFaceLayer::Generate(const FontFaceHandleDefault* handle, const FontFace
 	{
 		// @performance: We could be much smarter about this, e.g. such as adding new glyphs to the existing texture layout and textures.
 		// Right now we re-generate the whole thing, including textures.
-		for (auto& texture : textures)
-			texture.RemoveDatabaseCache();
-
 		texture_layout = TextureLayout{};
 		character_boxes.clear();
 		textures.clear();
@@ -166,7 +162,7 @@ bool FontFaceLayer::Generate(const FontFaceHandleDefault* handle, const FontFace
 		{
 			int texture_id = i;
 
-			TextureCallback texture_callback = [handle, effect_ptr, texture_id, handle_version](const String& name, UniquePtr<const byte[]>& data, Vector2i& dimensions) -> bool {
+			TextureCallback texture_callback = [handle, effect_ptr, texture_id, handle_version](const String& /*name*/, UniquePtr<const byte[]>& data, Vector2i& dimensions) -> bool {
 				bool result = handle->GenerateLayerTexture(data, dimensions, effect_ptr, texture_id, handle_version);
 				return result;
 			};
@@ -262,5 +258,4 @@ const Colourb& FontFaceLayer::GetColour() const
 	return colour;
 }
 
-}
-}
+} // namespace Rml

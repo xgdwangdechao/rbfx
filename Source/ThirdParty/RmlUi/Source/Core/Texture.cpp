@@ -31,7 +31,6 @@
 #include "TextureResource.h"
 
 namespace Rml {
-namespace Core {
 
 // Attempts to load a texture.
 void Texture::Set(const String& source, const String& source_path)
@@ -41,7 +40,7 @@ void Texture::Set(const String& source, const String& source_path)
 
 void Texture::Set(const String& name, const TextureCallback& callback)
 {
-	resource = std::make_shared<TextureResource>();
+	resource = MakeShared<TextureResource>();
 	resource->Set(name, callback);
 }
 
@@ -73,11 +72,6 @@ Vector2i Texture::GetDimensions(RenderInterface* render_interface) const
 	return resource->GetDimensions(render_interface);
 }
 
-void Texture::RemoveDatabaseCache() const
-{
-	TextureDatabase::RemoveTexture(resource.get());
-}
-
 bool Texture::operator==(const Texture& other) const
 {
 	return resource == other.resource;
@@ -88,5 +82,4 @@ Texture::operator bool() const
 	return static_cast<bool>(resource);
 }
 
-}
-}
+} // namespace Rml

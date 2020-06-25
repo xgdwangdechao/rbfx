@@ -15,7 +15,7 @@
  *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -26,14 +26,13 @@
  *
  */
 
-#ifndef RMLUICORETEXTURERESOURCE_H
-#define RMLUICORETEXTURERESOURCE_H
+#ifndef RMLUI_CORE_TEXTURERESOURCE_H
+#define RMLUI_CORE_TEXTURERESOURCE_H
 
 #include "../../Include/RmlUi/Core/Traits.h"
 #include "../../Include/RmlUi/Core/Texture.h"
 
 namespace Rml {
-namespace Core {
 
 /**
 	A texture resource stores application-generated texture data (handle and dimensions) for each
@@ -48,12 +47,12 @@ public:
 	TextureResource();
 	~TextureResource();
 
-	/// Clear any existing data and set the source path. Texture loading is delayed until the texture is
-	/// accessed by a specific render interface.
+	/// Clear any existing data and set the source path.
+	/// Texture loading is delayed until the texture is accessed by a specific render interface.
 	void Set(const String& source);
 
-	/// Clear any existing data and set a callback function for loading the data. Texture loading is
-	/// delayed until the texture is accessed by a specific render interface.
+	/// Clear any existing data and set a callback function for loading the data.
+	/// Texture loading is delayed until the texture is accessed by a specific render interface.
 	void Set(const String& name, const TextureCallback& callback);
 
 	/// Returns the resource's underlying texture handle.
@@ -67,21 +66,20 @@ public:
 	/// Releases the texture's handle.
 	void Release(RenderInterface* render_interface = nullptr);
 
-protected:
+private:
+	void Reset();
+
 	/// Attempts to load the texture from the source, or the callback function if set.
 	bool Load(RenderInterface* render_interface);
 
-private:
 	String source;
 
-	using TextureData = std::pair< TextureHandle, Vector2i >;
+	using TextureData = Pair< TextureHandle, Vector2i >;
 	using TextureDataMap = SmallUnorderedMap< RenderInterface*, TextureData >;
 	TextureDataMap texture_data;
 
 	UniquePtr<TextureCallback> texture_callback;
 };
 
-}
-}
-
+} // namespace Rml
 #endif

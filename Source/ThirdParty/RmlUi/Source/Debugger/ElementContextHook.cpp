@@ -27,12 +27,12 @@
  */
 
 #include "ElementContextHook.h"
-#include "Plugin.h"
+#include "DebuggerPlugin.h"
 
 namespace Rml {
 namespace Debugger {
 
-ElementContextHook::ElementContextHook(const Core::String& tag) : Core::ElementDocument(tag)
+ElementContextHook::ElementContextHook(const String& tag) : ElementDocument(tag)
 {
 	debugger = nullptr;
 }
@@ -41,7 +41,7 @@ ElementContextHook::~ElementContextHook()
 {
 }
 
-void ElementContextHook::Initialise(Plugin* _debugger)
+void ElementContextHook::Initialise(DebuggerPlugin* _debugger)
 {
 	SetId("rmlui-debug-hook");
 	debugger = _debugger;
@@ -49,7 +49,7 @@ void ElementContextHook::Initialise(Plugin* _debugger)
 
 void ElementContextHook::OnRender()
 {
-	// Make sure we're in the front of the render queue for this context (at least next frame).
+	// Make sure we're in the front of the render Queue for this context (at least next frame).
 	PullToFront();
 
 	// Render the debugging elements.

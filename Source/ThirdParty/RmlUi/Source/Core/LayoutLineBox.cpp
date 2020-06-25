@@ -37,7 +37,6 @@
 #include <stack>
 
 namespace Rml {
-namespace Core {
 
 static float GetSpacing(const Box& box, Box::Edge edge)
 {
@@ -316,7 +315,7 @@ LayoutInlineBox* LayoutLineBox::AddBox(LayoutInlineBox* box)
 // Adds an inline box as a chained hierarchy overflowing to this line.
 void LayoutLineBox::AddChainedBox(LayoutInlineBox* chained_box)
 {
-	std::stack< LayoutInlineBox* > hierarchy;
+	Stack< LayoutInlineBox* > hierarchy;
 	LayoutInlineBox* chain = chained_box;
 	while (chain != nullptr)
 	{
@@ -389,5 +388,4 @@ void LayoutLineBox::AppendBox(LayoutInlineBox* box)
 	open_inline_box = box;
 }
 
-}
-}
+} // namespace Rml

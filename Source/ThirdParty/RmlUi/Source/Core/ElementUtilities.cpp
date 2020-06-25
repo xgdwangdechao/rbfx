@@ -37,14 +37,12 @@
 #include "../../Include/RmlUi/Core/Factory.h"
 #include "../../Include/RmlUi/Core/FontEngineInterface.h"
 #include "../../Include/RmlUi/Core/RenderInterface.h"
-#include "../../Include/RmlUi/Core/TransformState.h"
 #include "ElementStyle.h"
 #include "LayoutEngine.h"
-#include <queue>
+#include "TransformState.h"
 #include <limits>
 
 namespace Rml {
-namespace Core {
 
 // Builds and sets the box for an element.
 static void SetBox(Element* element)
@@ -79,7 +77,7 @@ static void SetElementOffset(Element* element, const Vector2f& offset)
 Element* ElementUtilities::GetElementById(Element* root_element, const String& id)
 {
 	// Breadth first search on elements for the corresponding id
-	typedef std::queue<Element*> SearchQueue;
+	typedef Queue<Element*> SearchQueue;
 	SearchQueue search_queue;
 	search_queue.push(root_element);
 
@@ -104,7 +102,7 @@ Element* ElementUtilities::GetElementById(Element* root_element, const String& i
 void ElementUtilities::GetElementsByTagName(ElementList& elements, Element* root_element, const String& tag)
 {
 	// Breadth first search on elements for the corresponding id
-	typedef std::queue< Element* > SearchQueue;
+	typedef Queue< Element* > SearchQueue;
 	SearchQueue search_queue;
 	for (int i = 0; i < root_element->GetNumChildren(); ++i)
 		search_queue.push(root_element->GetChild(i));
@@ -126,7 +124,7 @@ void ElementUtilities::GetElementsByTagName(ElementList& elements, Element* root
 void ElementUtilities::GetElementsByClassName(ElementList& elements, Element* root_element, const String& class_name)
 {
 	// Breadth first search on elements for the corresponding id
-	typedef std::queue< Element* > SearchQueue;
+	typedef Queue< Element* > SearchQueue;
 	SearchQueue search_queue;
 	for (int i = 0; i < root_element->GetNumChildren(); ++i)
 		search_queue.push(root_element->GetChild(i));
@@ -253,7 +251,7 @@ bool ElementUtilities::GetClippingRegion(Vector2i& clip_origin, Vector2i& clip_d
 // Sets the clipping region from an element and its ancestors.
 bool ElementUtilities::SetClippingRegion(Element* element, Context* context)
 {	
-	Rml::Core::RenderInterface* render_interface = nullptr;
+	RenderInterface* render_interface = nullptr;
 	if (element)
 	{
 		render_interface = element->GetRenderInterface();
@@ -405,8 +403,8 @@ static bool ApplyDataViewsControllersInternal(Element* element, const bool const
 		// Since data views and controllers may modify the element's attributes during initialization, we 
 		// need to iterate over all the attributes _before_ initializing any views or controllers. We store
 		// the information needed to initialize them in the following container.
-		std::vector<ViewControllerInitializer> initializer_list;
-		
+		Vector<ViewControllerInitializer> initializer_list;
+
 		for (auto& attribute : element->GetAttributes())
 		{
 			// Data views and controllers are declared by the following element attribute:
@@ -457,7 +455,7 @@ static bool ApplyDataViewsControllersInternal(Element* element, const bool const
 		}
 
 		// Now, we can safely initialize the data views and controllers, even modifying the element's attributes when desired.
-		for(ViewControllerInitializer& initializer : initializer_list)
+		for (ViewControllerInitializer& initializer : initializer_list)
 		{
 			DataViewPtr& view = initializer.view;
 			DataControllerPtr& controller = initializer.controller;
@@ -500,5 +498,4 @@ bool ElementUtilities::ApplyStructuralDataViews(Element* element, const String& 
 	return ApplyDataViewsControllersInternal(element, true, inner_rml);
 }
 
-}
-}
+} // namespace Rml

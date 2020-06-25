@@ -37,7 +37,6 @@
 #include "../../Include/RmlUi/Core/Factory.h"
 
 namespace Rml {
-namespace Core {
 
 using NodeHandlers = UnorderedMap< String, SharedPtr<XMLNodeHandler> >;
 static NodeHandlers node_handlers;
@@ -57,7 +56,7 @@ XMLParser::XMLParser(Element* root)
 
 	active_handler = nullptr;
 
-	header = std::make_unique<DocumentHeader>();
+	header = MakeUnique<DocumentHeader>();
 }
 
 XMLParser::~XMLParser()
@@ -185,5 +184,4 @@ void XMLParser::HandleData(const String& data, XMLDataType type)
 		stack.top().node_handler->ElementData(this, data, type);
 }
 
-}
-}
+} // namespace Rml

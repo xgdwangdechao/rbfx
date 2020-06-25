@@ -15,7 +15,7 @@
  *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- *
+ * 
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -26,17 +26,15 @@
  *
  */
 
-#include "../../Include/RmlUi/Core/Variant.h"   // rbfx fix: Undeclared Variant error.
 #include "DataViewDefault.h"
 #include "DataExpression.h"
 #include "../../Include/RmlUi/Core/DataModel.h"
 #include "../../Include/RmlUi/Core/Element.h"
 #include "../../Include/RmlUi/Core/ElementText.h"
 #include "../../Include/RmlUi/Core/Factory.h"
+#include "../../Include/RmlUi/Core/Variant.h"
 
 namespace Rml {
-namespace Core {
-
 
 DataViewCommon::DataViewCommon(Element* element, String override_modifier) : DataView(element), modifier(override_modifier)
 {}
@@ -47,7 +45,7 @@ bool DataViewCommon::Initialize(DataModel& model, Element* element, const String
 	if (modifier.empty())
 		modifier = in_modifier;
 
-	expression = std::make_unique<DataExpression>(expression_str);
+	expression = MakeUnique<DataExpression>(expression_str);
 	DataExpressionInterface interface(&model, element);
 
 	bool result = expression->Parse(interface, false);
@@ -92,7 +90,7 @@ bool DataViewAttribute::Update(DataModel& model)
 	{
 		const String value = variant.Get<String>();
 		const Variant* attribute = element->GetAttribute(attribute_name);
-
+		
 		if (!attribute || (attribute && attribute->Get<String>() != value))
 		{
 			element->SetAttribute(attribute_name, value);
@@ -117,7 +115,7 @@ bool DataViewStyle::Update(DataModel& model)
 	Variant variant;
 	Element* element = GetElement();
 	DataExpressionInterface interface(&model, element);
-
+	
 	if (element && GetExpression().Run(interface, variant))
 	{
 		const String value = variant.Get<String>();
@@ -248,7 +246,7 @@ bool DataViewText::Initialize(DataModel& model, Element* element, const String& 
 		return false;
 
 	const String& in_text = element_text->GetText();
-
+	
 	text.reserve(in_text.size());
 
 	DataExpressionInterface expression_interface(&model, element);
@@ -267,7 +265,7 @@ bool DataViewText::Initialize(DataModel& model, Element* element, const String& 
 
 		DataEntry entry;
 		entry.index = text.size();
-		entry.data_expression = std::make_unique<DataExpression>(String(in_text.begin() + begin_name, in_text.begin() + end_name));
+		entry.data_expression = MakeUnique<DataExpression>(String(in_text.begin() + begin_name, in_text.begin() + end_name));
 
 		if (entry.data_expression->Parse(expression_interface, false))
 			data_entries.push_back(std::move(entry));
@@ -288,19 +286,21 @@ bool DataViewText::Initialize(DataModel& model, Element* element, const String& 
 bool DataViewText::Update(DataModel& model)
 {
 	bool entries_modified = false;
-	Element* element = GetElement();
-	DataExpressionInterface expression_interface(&model, element);
-
-	for (DataEntry& entry : data_entries)
 	{
-		RMLUI_ASSERT(entry.data_expression);
-		Variant variant;
-		bool result = entry.data_expression->Run(expression_interface, variant);
-		const String value = variant.Get<String>();
-		if (result && entry.value != value)
+		Element* element = GetElement();
+		DataExpressionInterface expression_interface(&model, element);
+
+		for (DataEntry& entry : data_entries)
 		{
-			entry.value = value;
-			entries_modified = true;
+			RMLUI_ASSERT(entry.data_expression);
+			Variant variant;
+			bool result = entry.data_expression->Run(expression_interface, variant);
+			const String value = variant.Get<String>();
+			if (result && entry.value != value)
+			{
+				entry.value = value;
+				entries_modified = true;
+			}
 		}
 	}
 
@@ -310,7 +310,7 @@ bool DataViewText::Update(DataModel& model)
 		{
 			RMLUI_ASSERTMSG(rmlui_dynamic_cast<ElementText*>(element), "Somehow the element type was changed from ElementText since construction of the view. Should not be possible?");
 
-			if (auto text_element = static_cast<ElementText*>(element))
+			if (ElementText* text_element = static_cast<ElementText*>(element))
 			{
 				String new_text = BuildText();
 				text_element->SetText(new_text);
@@ -336,8 +336,8 @@ StringList DataViewText::GetVariableNameList() const
 
 		StringList entry_list = entry.data_expression->GetVariableNameList();
 		full_list.insert(full_list.end(),
-			std::make_move_iterator(entry_list.begin()),
-			std::make_move_iterator(entry_list.end())
+			MakeMoveIterator(entry_list.begin()),
+			MakeMoveIterator(entry_list.end())
 		);
 	}
 
@@ -490,5 +490,4 @@ void DataViewFor::Release()
 	delete this;
 }
 
-}
-}
+} // namespace Rml

@@ -32,7 +32,6 @@
 #include "../../Include/RmlUi/Core/Log.h"
 
 namespace Rml {
-namespace Core {
 
 static TemplateCache* instance = nullptr;
 
@@ -73,7 +72,7 @@ Template* TemplateCache::LoadTemplate(const String& name)
 
 	// Nope, we better load it
 	Template* new_template = nullptr;
-	auto stream = std::make_unique<StreamFile>();
+	auto stream = MakeUnique<StreamFile>();
 	if (stream->Open(name))
 	{
 		new_template = new Template();
@@ -122,5 +121,4 @@ void TemplateCache::Clear()
 	instance->template_ids.clear();
 }
 
-}
-}
+} // namespace Rml

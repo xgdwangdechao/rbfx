@@ -15,7 +15,7 @@
  *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- *
+ * 
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -26,8 +26,8 @@
  *
  */
 
-#ifndef RMLUICORERENDERINTERFACE_H
-#define RMLUICORERENDERINTERFACE_H
+#ifndef RMLUI_CORE_RENDERINTERFACE_H
+#define RMLUI_CORE_RENDERINTERFACE_H
 
 #include "Traits.h"
 #include "Header.h"
@@ -36,13 +36,12 @@
 #include "Types.h"
 
 namespace Rml {
-namespace Core {
 
 class Context;
 
 /**
 	The abstract base class for application-specific rendering implementation. Your application must provide a concrete
-	implementation of this class and install it through Core::SetRenderInterface() in order for anything to be rendered.
+	implementation of this class and install it through Rml::SetRenderInterface() in order for anything to be rendered.
 
 	@author Peter Curry
  */
@@ -123,7 +122,5 @@ private:
 	friend class Context;
 };
 
-}
-}
-
+} // namespace Rml
 #endif

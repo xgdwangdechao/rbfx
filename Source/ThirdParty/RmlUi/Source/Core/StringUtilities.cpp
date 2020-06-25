@@ -34,8 +34,6 @@
 #include <string.h>
 
 namespace Rml {
-namespace Core {
-
 
 static int FormatString(String& string, size_t max_size, const char* format, va_list argument_list)
 {
@@ -470,7 +468,7 @@ U16String StringUtilities::ToUTF16(const String& input)
 	if (input.empty())
 		return result;
 
-	std::vector<Character> characters;
+	Vector<Character> characters;
 	characters.reserve(input.size());
 
 	for (auto it = StringIteratorU8(input); it; ++it)
@@ -511,7 +509,7 @@ U16String StringUtilities::ToUTF16(const String& input)
 
 String StringUtilities::ToUTF8(const U16String& input)
 {
-	std::vector<Character> characters;
+	Vector<Character> characters;
 	characters.reserve(input.size());
 
 	bool valid_input = true;
@@ -570,7 +568,7 @@ StringView::StringView(const String& string) : p_begin(string.data()), p_end(str
 {}
 StringView::StringView(const String& string, size_t offset) : p_begin(string.data() + offset), p_end(string.data() + string.size())
 {}
-StringView::StringView(const String& string, size_t offset, size_t count) : p_begin(string.data() + offset), p_end(string.data() + std::min(offset + count, string.size()))
+StringView::StringView(const String& string, size_t offset, size_t count) : p_begin(string.data() + offset), p_end(string.data() + std::min<size_t>(offset + count, string.size()))
 {}
 
 bool StringView::operator==(const StringView& other) const { 
@@ -606,5 +604,4 @@ inline void StringIteratorU8::SeekForward() {
 	p = StringUtilities::SeekForwardUTF8(p, view.end());
 }
 
-}
-}
+} // namespace Rml

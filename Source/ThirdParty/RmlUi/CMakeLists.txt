@@ -28,14 +28,14 @@ file(GLOB_RECURSE SOURCE_FILES Include/*.h Source/*.cpp)
 
 file (GLOB_RECURSE SOURCE_FILES *.h *.cpp)
 add_library(RmlUi STATIC ${SOURCE_FILES})
-target_compile_definitions(RmlUi PRIVATE -DRMLUI_VERSION="${RMLUI_VERSION_SHORT}" PUBLIC -DRMLUI_NO_THIRDPARTY_CONTAINERS=1)
+target_compile_definitions(RmlUi PRIVATE -DRMLUI_VERSION="${RMLUI_VERSION_SHORT}" -DNDEBUG=1 PUBLIC -DRMLUI_NO_THIRDPARTY_CONTAINERS=1)
 if (APPLE)
     # Disables naked builtins from AssertMacros.h which
     # This prevents naming collisions such as those from the check()
     # function macro with LuaType::check
     target_compile_definitions(RmlUi PRIVATE -D__ASSERT_MACROS_DEFINE_VERSIONS_WITHOUT_UNDERSCORES=0)
 endif ()
-target_link_libraries(RmlUi PUBLIC FreeType)
+target_link_libraries(RmlUi PUBLIC FreeType EASTL)
 target_include_directories(RmlUi SYSTEM
     INTERFACE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/Include>
     PUBLIC    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/Include/RmlUi>
@@ -45,6 +45,6 @@ target_include_directories(RmlUi SYSTEM
 install (DIRECTORY Include/ DESTINATION ${DEST_THIRDPARTY_HEADERS_DIR}/ FILES_MATCHING PATTERN *.h)
 
 if (NOT URHO3D_MERGE_STATIC_LIBS)
-    target_compile_definitions(RmlUi PRIVATE -DRmlCore_EXPORTS=1)
+    target_compile_definitions(RmlUi PRIVATE -DRmlCore_EXPORTS=1 -DRmlDebugger_EXPORTS=1)
     install(TARGETS RmlUi EXPORT Urho3D ARCHIVE DESTINATION ${DEST_ARCHIVE_DIR_CONFIG})
 endif ()

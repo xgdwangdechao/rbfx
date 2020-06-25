@@ -33,12 +33,8 @@
 namespace Rml
 {
 
-namespace Core
-{
-
 class Context;
-
-}
+class Element;
 
 }
 
@@ -54,6 +50,8 @@ class RmlFile;
 
 }
 
+class UIDocument;
+
 /// %UI subsystem. Manages the graphical user interface.
 class URHO3D_API UI2 : public Object
 {
@@ -65,6 +63,9 @@ public:
     /// Destruct.
     ~UI2() override;
 
+    /// Load a specified rml document.
+    UIDocument* LoadDocument(const ea::string& path);
+
     /// Update the UI logic. Called by HandlePostUpdate().
     void Update(float timeStep);
     /// Render the UI batches. Returns true if call rendered anything. Rendering succeeds only once per frame.
@@ -73,8 +74,6 @@ public:
 private:
     /// Initialize when screen mode initially set.
     void Initialize();
-    /// Update UI element logic recursively.
-    void Update(float timeStep, UIElement* element);
 
     /// Handle screen mode event.
     void HandleScreenMode(StringHash eventType, VariantMap& eventData);
@@ -123,18 +122,14 @@ private:
     bool initialized_ = false;
     /// Flag for UI already being rendered this frame.
     bool uiRendered_ = false;
-    /// Timer used to trigger double click.
-    Timer clickTimer_{};
-    /// Current scale of UI.
-    float uiScale_ = 1.0f;
-    /// Root element custom size. 0,0 for automatic resizing (default).
-    IntVector2 customSize_{};
     /// Flag indicating that UI should process input when mouse cursor hovers SystemUI elements.
     bool partOfSystemUI_ = false;
     /// UI context name.
     ea::string name_;
     /// RmlUi context.
-    Rml::Core::Context* rmlContext_ = nullptr;
+    Rml::Context* rmlContext_ = nullptr;
+    /// All documents owned by this UI instance.
+    ea::vector<SharedPtr<UIDocument>> documents_;
 };
 
 /// Register UI library objects.

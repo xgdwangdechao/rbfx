@@ -26,15 +26,15 @@
  *
  */
 
-#ifndef RMLUICOREDATAVIEWDEFAULT_H
-#define RMLUICOREDATAVIEWDEFAULT_H
+#ifndef RMLUI_CORE_DATAVIEWDEFAULT_H
+#define RMLUI_CORE_DATAVIEWDEFAULT_H
 
 #include "../../Include/RmlUi/Core/Header.h"
 #include "../../Include/RmlUi/Core/Types.h"
 #include "../../Include/RmlUi/Core/DataView.h"
+#include "../../Include/RmlUi/Core/Variant.h"
 
 namespace Rml {
-namespace Core {
 
 class Element;
 class DataExpression;
@@ -142,7 +142,7 @@ private:
 	};
 
 	String text;
-	std::vector<DataEntry> data_entries;
+	Vector<DataEntry> data_entries;
 };
 
 
@@ -169,7 +169,5 @@ private:
 	ElementList elements;
 };
 
-}
-}
-
+} // namespace Rml
 #endif

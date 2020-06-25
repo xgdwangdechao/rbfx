@@ -29,14 +29,12 @@
 #include "../../Include/RmlUi/Core/DataTypeRegister.h"
 
 namespace Rml {
-namespace Core {
-
 
 DataTypeRegister::DataTypeRegister()
 {
     // Add default transform functions.
 
-	transform_register.Register("to_lower", [](Variant& variant, const VariantList& arguments) -> bool {
+	transform_register.Register("to_lower", [](Variant& variant, const VariantList& /*arguments*/) -> bool {
 		String value;
 		if (!variant.GetInto(value))
 			return false;
@@ -44,7 +42,7 @@ DataTypeRegister::DataTypeRegister()
 		return true;
 	});
 
-	transform_register.Register("to_upper", [](Variant& variant, const VariantList& arguments) -> bool {
+	transform_register.Register("to_upper", [](Variant& variant, const VariantList& /*arguments*/) -> bool {
 		String value;
 		if (!variant.GetInto(value))
 			return false;
@@ -87,7 +85,7 @@ DataTypeRegister::DataTypeRegister()
 		return true;
 	});
 
-	transform_register.Register("round", [](Variant& variant, const VariantList& arguments) -> bool {
+	transform_register.Register("round", [](Variant& variant, const VariantList& /*arguments*/) -> bool {
 		double value = 0;
 		if (!variant.GetInto(value))
 			return false;
@@ -122,5 +120,4 @@ bool TransformFuncRegister::Call(const String& name, Variant& inout_result, cons
     return transform_func(inout_result, arguments);
 }
 
-}
-}
+} // namespace Rml

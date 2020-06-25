@@ -24,17 +24,14 @@
  * THE SOFTWARE.
  *
  */
- 
-#ifndef RMLUICORETWEEN_H
-#define RMLUICORETWEEN_H
 
-#include <string>
+#ifndef RMLUI_CORE_TWEEN_H
+#define RMLUI_CORE_TWEEN_H
+
+#include "Types.h"
 #include "Header.h"
 
 namespace Rml {
-namespace Core {
-
-using String = std::string;
 
 class RMLUICORE_API Tween {
 public:
@@ -69,7 +66,5 @@ private:
 };
 
 
-}
-}
-
+} // namespace Rml
 #endif

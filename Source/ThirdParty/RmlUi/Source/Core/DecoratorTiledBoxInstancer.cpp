@@ -30,7 +30,6 @@
 #include "DecoratorTiledBox.h"
 
 namespace Rml {
-namespace Core {
 
 DecoratorTiledBoxInstancer::DecoratorTiledBoxInstancer() : DecoratorTiledInstancer(9)
 {
@@ -66,12 +65,11 @@ SharedPtr<Decorator>DecoratorTiledBoxInstancer::InstanceDecorator(const String& 
 	if (!GetTileProperties(tiles, textures, num_tiles, properties, interface))
 		return nullptr;
 
-	auto decorator = std::make_shared<DecoratorTiledBox>();
+	auto decorator = MakeShared<DecoratorTiledBox>();
 	if (!decorator->Initialise(tiles, textures))
 		return nullptr;
 
 	return decorator;
 }
 
-}
-}
+} // namespace Rml

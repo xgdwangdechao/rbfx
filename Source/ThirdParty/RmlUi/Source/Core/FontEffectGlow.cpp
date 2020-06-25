@@ -31,7 +31,6 @@
 #include "../../Include/RmlUi/Core/PropertyDefinition.h"
 
 namespace Rml {
-namespace Core {
 
 FontEffectGlow::FontEffectGlow()
 {
@@ -174,7 +173,7 @@ SharedPtr<FontEffect> FontEffectGlowInstancer::InstanceFontEffect(const String& 
 	if (width_blur < 0)
 		width_blur = width_outline;
 
-	auto font_effect = std::make_shared<FontEffectGlow>();
+	auto font_effect = MakeShared<FontEffectGlow>();
 	if (font_effect->Initialise(width_outline, width_blur, offset))
 	{
 		font_effect->SetColour(color);
@@ -184,5 +183,4 @@ SharedPtr<FontEffect> FontEffectGlowInstancer::InstanceFontEffect(const String& 
 	return nullptr;
 }
 
-}
-}
+} // namespace Rml

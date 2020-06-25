@@ -33,7 +33,6 @@
 #include "../../Include/RmlUi/Core/Profiling.h"
 
 namespace Rml {
-namespace Core {
 
 ElementBorder::ElementBorder(Element* _element) : geometry(_element)
 {
@@ -79,8 +78,8 @@ void ElementBorder::GenerateBorder()
 		}
 	}
 
-	std::vector< Vertex >& vertices = geometry.GetVertices();
-	std::vector< int >& indices = geometry.GetIndices();
+	Vector< Vertex >& vertices = geometry.GetVertices();
+	Vector< int >& indices = geometry.GetIndices();
 
 	int index_offset = 0;
 	vertices.resize(4 * num_edges);
@@ -159,5 +158,4 @@ void ElementBorder::GenerateBorder(Vertex*& vertices, int*& indices, int& index_
 	}
 }
 
-}
-}
+} // namespace Rml

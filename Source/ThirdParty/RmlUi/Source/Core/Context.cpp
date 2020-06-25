@@ -26,18 +26,27 @@
  *
  */
 
-#include "../../Include/RmlUi/Core.h"
+#include "../../Include/RmlUi/Core/Context.h"
+#include "../../Include/RmlUi/Core/ContextInstancer.h"
+#include "../../Include/RmlUi/Core/Core.h"
+#include "../../Include/RmlUi/Core/ElementDocument.h"
+#include "../../Include/RmlUi/Core/ElementUtilities.h"
+#include "../../Include/RmlUi/Core/Factory.h"
+#include "../../Include/RmlUi/Core/Profiling.h"
+#include "../../Include/RmlUi/Core/RenderInterface.h"
+#include "../../Include/RmlUi/Core/StreamMemory.h"
+#include "../../Include/RmlUi/Core/SystemInterface.h"
+#include "../../Include/RmlUi/Core/DataModel.h"
+#include "../../Include/RmlUi/Core/StreamMemory.h"
 #include "EventDispatcher.h"
 #include "EventIterators.h"
 #include "PluginRegistry.h"
 #include "StreamFile.h"
-#include "../../Include/RmlUi/Core/DataModel.h"
-#include "../../Include/RmlUi/Core/StreamMemory.h"
 #include <algorithm>
 #include <iterator>
 
+
 namespace Rml {
-namespace Core {
 
 static constexpr float DOUBLE_CLICK_TIME = 0.5f;     // [s]
 static constexpr float DOUBLE_CLICK_MAX_DIST = 3.f;  // [dp]
@@ -46,7 +55,7 @@ Context::Context(const String& name) : name(name), dimensions(0, 0), density_ind
 {
 	instancer = nullptr;
 
-	// Initialise this to nullptr; this will be set in Rml::Core::CreateContext().
+	// Initialise this to nullptr; this will be set in Rml::CreateContext().
 	render_interface = nullptr;
 
 	root = Factory::InstanceElement(nullptr, "*", "#root", XMLAttributes());
@@ -233,7 +242,7 @@ ElementDocument* Context::CreateDocument(const String& tag)
 // Load a document into the context.
 ElementDocument* Context::LoadDocument(const String& document_path)
 {	
-	auto stream = std::make_unique<StreamFile>();
+	auto stream = MakeUnique<StreamFile>();
 
 	if (!stream->Open(document_path))
 		return nullptr;
@@ -274,7 +283,7 @@ ElementDocument* Context::LoadDocument(Stream* stream)
 ElementDocument* Context::LoadDocumentFromMemory(const String& string)
 {
 	// Open the stream based on the string contents.
-	auto stream = std::make_unique<StreamMemory>((byte*)string.c_str(), string.size());
+	auto stream = MakeUnique<StreamMemory>((byte*)string.c_str(), string.size());
 	stream->SetSourceURL("[document from memory]");
 
 	// Load the document from the stream.
@@ -503,7 +512,7 @@ bool Context::ProcessKeyUp(Input::KeyIdentifier key_identifier, int key_modifier
 bool Context::ProcessTextInput(char character)
 {
 	// Only the standard ASCII character set is a valid subset of UTF-8.
-	if (character < 0 || character > 127)
+	if (static_cast<unsigned char>(character) > 127)
 		return false;
 	return ProcessTextInput(static_cast<Character>(character));
 }
@@ -791,9 +800,9 @@ void Context::SetInstancer(ContextInstancer* _instancer)
 DataModelConstructor Context::CreateDataModel(const String& name)
 {
 	if (!data_type_register)
-		data_type_register = std::make_unique<DataTypeRegister>();
+		data_type_register = MakeUnique<DataTypeRegister>();
 
-	auto result = data_models.emplace(name, std::make_unique<DataModel>(data_type_register->GetTransformFuncRegister()));
+	auto result = data_models.emplace(name, MakeUnique<DataModel>(data_type_register->GetTransformFuncRegister()));
 	bool inserted = result.second;
 	if (inserted)
 		return DataModelConstructor(result.first->second.get(), data_type_register.get());
@@ -1244,7 +1253,7 @@ void Context::ReleaseUnloadedDocuments()
 	}
 }
 
-using ElementObserverList = std::vector< ObserverPtr<Element> >;
+using ElementObserverList = Vector< ObserverPtr<Element> >;
 
 class ElementObserverListBackInserter {
 public:
@@ -1289,5 +1298,4 @@ void Context::Release()
 	}
 }
 
-}
-}
+} // namespace Rml

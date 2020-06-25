@@ -48,11 +48,11 @@
 #include "../UI2/RmlRenderer.h"
 #include "../UI2/RmlSystem.h"
 #include "../UI2/RmlFile.h"
+#include "../UI2/UIDocument.h"
 
 #include <cassert>
 #include <SDL/SDL.h>
 #include <RmlUi/Core.h>
-#include <RmlUi/Controls.h>
 #include <RmlUi/Debugger.h>
 
 #include "../DebugNew.h"
@@ -67,7 +67,78 @@ static MouseButton MakeTouchIDMask(int id)
 
 static int MouseButtonUrho3DToRml(MouseButton button);
 static int ModifiersUrho3DToRml(QualifierFlags modifier);
-static Rml::Core::Input::KeyIdentifier ScancodeUrho3DToRml(Scancode scancode);
+static Rml::Input::KeyIdentifier ScancodeUrho3DToRml(Scancode scancode);
+
+class RmlSubsystemPlugin : public Object, public Rml::Plugin, public Rml::EventListenerInstancer
+{
+    URHO3D_OBJECT(RmlSubsystemPlugin, Object);
+
+public:
+    /// Construct.
+    explicit RmlSubsystemPlugin(UI2* ui)
+        : Object(ui->GetContext())
+        , ui_(ui)
+    {
+    }
+
+    /// Called when the plugin is registered to determine
+    /// which of the above event types the plugin is interested in
+    int GetEventClasses() override { return EVT_ALL; }
+
+    /// Called when RmlUi is initialised, or immediately when the plugin registers itself if
+    /// RmlUi has already been initialised.
+    void OnInitialise() override { }
+    /// Called when RmlUi shuts down.
+    void OnShutdown() override { }
+
+    /// Called when a new context is created.
+    void OnContextCreate(Rml::Context* context) override { }
+    /// Called when a context is destroyed.
+    void OnContextDestroy(Rml::Context* context) override { }
+
+    /// Called when a document load request occurs, before the document's file is opened.
+    void OnDocumentOpen(Rml::Context* context, const Rml::String& document_path) override { }
+    /// Called when a document is successfully loaded from file or instanced, initialised and added
+    /// to its context. This is called before the document's 'load' event.
+    void OnDocumentLoad(Rml::ElementDocument* document) override { }
+    /// Called when a document is unloaded from its context. This is called after the document's
+    /// 'unload' event.
+    void OnDocumentUnload(Rml::ElementDocument* document) override { }
+
+    /// Called when a new element is created.
+    void OnElementCreate(Rml::Element* element) override
+    {
+    }
+    /// Called when an element is destroyed.
+    void OnElementDestroy(Rml::Element* element) override { }
+
+    Rml::EventListener* InstanceEventListener(const Rml::String& value, Rml::Element* element) override
+    {
+        return nullptr;
+    }
+	/// Called when an event is dispatched.
+	// void OnDispatchEvent(Rml::Event* event) override
+    // {
+    //     using namespace Click;
+
+    //     VariantMap& args = GetEventDataMap();
+    //     args[P_ELEMENT] = event->GetCurrentElement();
+    //     args[P_TARGETELEMENT] = event->GetTargetElement();
+    //     args[P_PROPAGATING] = event->IsPropagating();
+    //     args[P_IMMEDIATEPROPAGATING] = event->IsImmediatePropagating();
+    //     args[P_INTERRUPTIBLE] = event->IsInterruptible();
+
+    //     ui_->SendEvent(event->GetType().c_str(), args);
+
+    //     if (args[P_PROPAGATING].GetBool() != event->IsPropagating())
+    //         event->StopPropagation();
+    //     if (args[P_IMMEDIATEPROPAGATING].GetBool() != event->IsImmediatePropagating())
+    //         event->StopImmediatePropagation();
+    // }
+
+private:
+    WeakPtr<UI2> ui_;
+};
 
 UI2::UI2(Context* context, const char* name)
     : Object(context)
@@ -86,7 +157,23 @@ UI2::UI2(Context* context, const char* name)
 UI2::~UI2()
 {
     rmlContext_ = nullptr;
-    Rml::Core::Shutdown();
+    Rml::Shutdown();
+}
+
+UIDocument* UI2::LoadDocument(const ea::string& path)
+{
+    if (rmlContext_ == nullptr)
+        return nullptr;
+
+    Rml::ElementDocument* document = rmlContext_->LoadDocument("demo.rml");
+    if (document == nullptr)
+        return nullptr;
+
+    documents_.push_back(context_->CreateObject<UIDocument>());
+
+    UIDocument* uiDocument = documents_.back();
+    uiDocument->SetDocument(document);
+    return uiDocument;
 }
 
 void UI2::Update(float timeStep)
@@ -119,15 +206,14 @@ void UI2::Initialize()
     graphics_ = graphics;
     UIBatch::posAdjust = Vector3(Graphics::GetPixelUVOffset(), 0.0f);
 
-    Rml::Core::SetRenderInterface(rmlRenderer_.Get());
-    Rml::Core::SetSystemInterface(rmlSystem_.Get());
-    Rml::Core::SetFileInterface(rmlFile_.Get());
-    Rml::Core::Initialise();
+    Rml::SetRenderInterface(rmlRenderer_.Get());
+    Rml::SetSystemInterface(rmlSystem_.Get());
+    Rml::SetFileInterface(rmlFile_.Get());
+    Rml::Initialise();
 
-    rmlContext_ = Rml::Core::CreateContext(name_.c_str(), Rml::Core::Vector2i(graphics->GetWidth(), graphics->GetHeight()));
-    Rml::Controls::Initialise();
-    Rml::Debugger::Initialise(rmlContext_);
-    Rml::Debugger::SetVisible(true);
+    rmlContext_ = Rml::CreateContext(name_.c_str(), Rml::Vector2i(graphics->GetWidth(), graphics->GetHeight()));
+    // Rml::Debugger::Initialise(rmlContext_);
+    // Rml::Debugger::SetVisible(true);
 
     initialized_ = true;
 
@@ -147,12 +233,13 @@ void UI2::Initialize()
     SubscribeToEvent(E_POSTUPDATE, &UI2::HandlePostUpdate);
     SubscribeToEvent(E_ENDALLVIEWSRENDER, &UI2::HandleEndAllViewsRender);
 
-    Rml::Core::LoadFontFace("Delicious-Roman.otf", true);
-    Rml::Core::LoadFontFace("Delicious-Bold.otf", false);
-    Rml::Core::LoadFontFace("Delicious-BoldItalic.otf", false);
-    Rml::Core::LoadFontFace("Delicious-Italic.otf", false);
-    Rml::Core::LoadFontFace("NotoEmoji-Regular.ttf", false);
-    rmlContext_->LoadDocument("demo.rml")->Show();
+    Rml::LoadFontFace("Delicious-Roman.otf", true);
+    Rml::LoadFontFace("Delicious-Bold.otf", false);
+    Rml::LoadFontFace("Delicious-BoldItalic.otf", false);
+    Rml::LoadFontFace("Delicious-Italic.otf", false);
+    Rml::LoadFontFace("NotoEmoji-Regular.ttf", false);
+    auto* d = rmlContext_->LoadDocument("demo.rml");
+    d->Show();
 }
 
 void UI2::HandleScreenMode(StringHash eventType, VariantMap& eventData)
@@ -242,7 +329,7 @@ void UI2::HandleKeyDown(StringHash eventType, VariantMap& eventData)
         return;
 #endif
     using namespace KeyDown;
-    Rml::Core::Input::KeyIdentifier key = ScancodeUrho3DToRml((Scancode)eventData[P_SCANCODE].GetUInt());
+    Rml::Input::KeyIdentifier key = ScancodeUrho3DToRml((Scancode)eventData[P_SCANCODE].GetUInt());
     int modifiers = ModifiersUrho3DToRml((QualifierFlags)eventData[P_QUALIFIERS].GetInt());
     rmlContext_->ProcessKeyDown(key, modifiers);
 }
@@ -254,7 +341,7 @@ void UI2::HandleKeyUp(StringHash eventType, VariantMap& eventData)
         return;
 #endif
     using namespace KeyUp;
-    Rml::Core::Input::KeyIdentifier key = ScancodeUrho3DToRml((Scancode)eventData[P_SCANCODE].GetUInt());
+    Rml::Input::KeyIdentifier key = ScancodeUrho3DToRml((Scancode)eventData[P_SCANCODE].GetUInt());
     int modifiers = ModifiersUrho3DToRml((QualifierFlags)eventData[P_QUALIFIERS].GetInt());
     rmlContext_->ProcessKeyUp(key, modifiers);
 }
@@ -265,8 +352,8 @@ void UI2::HandleTextInput(StringHash eventType, VariantMap& eventData)
     if (ShouldIgnoreInput())
         return;
 #endif
-
     using namespace TextInput;
+    rmlContext_->ProcessTextInput(eventData[P_TEXT].GetString().c_str());
 }
 
 void UI2::HandleBeginFrame(StringHash eventType, VariantMap& eventData)
@@ -283,14 +370,18 @@ void UI2::HandlePostUpdate(StringHash eventType, VariantMap& eventData)
 
 void UI2::HandleDropFile(StringHash eventType, VariantMap& eventData)
 {
+    using namespace DropFile;
     auto* input = GetSubsystem<Input>();
 
     // Sending the UI variant of the event only makes sense if the OS cursor is visible (not locked to window center)
-    if (input->IsMouseVisible())
+    if (!input->IsMouseVisible())
+        return;
+
+    if (auto* element = rmlContext_->GetHoverElement())
     {
-        IntVector2 screenPos = input->GetMousePosition();
-        screenPos.x_ = int(screenPos.x_ / uiScale_);
-        screenPos.y_ = int(screenPos.y_ / uiScale_);
+        Rml::Dictionary args;
+        args["path"] = eventData[P_FILENAME].GetString().c_str();
+        element->DispatchEvent("dropfile", args);
     }
 }
 
@@ -307,7 +398,7 @@ bool UI2::ShouldIgnoreInput() const
         return true;
 #if URHO3D_SYSTEMUI
     // Any systemUI element is hovered except when rendering into texture. Chances are this texture will be displayed
-    // as UI2::Image() and hovering mouse.
+    // as ui::Image() and hovering mouse.
     if (GetSubsystem<SystemUI>()->IsAnyItemHovered())
         return !partOfSystemUI_;
 
@@ -353,17 +444,17 @@ static int ModifiersUrho3DToRml(QualifierFlags modifier)
 {
     int rmlModifiers = 0;
     if (modifier & QUAL_ALT)
-        rmlModifiers |= Rml::Core::Input::KeyModifier::KM_ALT;
+        rmlModifiers |= Rml::Input::KeyModifier::KM_ALT;
     if (modifier & QUAL_CTRL)
-        rmlModifiers |= Rml::Core::Input::KeyModifier::KM_CTRL;
+        rmlModifiers |= Rml::Input::KeyModifier::KM_CTRL;
     if (modifier & QUAL_SHIFT)
-        rmlModifiers |= Rml::Core::Input::KeyModifier::KM_SHIFT;
+        rmlModifiers |= Rml::Input::KeyModifier::KM_SHIFT;
     return rmlModifiers;
 }
 
-static Rml::Core::Input::KeyIdentifier ScancodeUrho3DToRml(Scancode scancode)
+static Rml::Input::KeyIdentifier ScancodeUrho3DToRml(Scancode scancode)
 {
-    using namespace Rml::Core::Input;
+    using namespace Rml::Input;
 
     switch (scancode)
     {

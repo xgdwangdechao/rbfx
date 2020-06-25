@@ -31,7 +31,6 @@
 #include "../../Include/RmlUi/Core/PropertyDefinition.h"
 
 namespace Rml {
-namespace Core {
 
 FontEffectBlur::FontEffectBlur()
 {
@@ -136,7 +135,7 @@ SharedPtr<FontEffect> FontEffectBlurInstancer::InstanceFontEffect(const String& 
 	float width = properties.GetProperty(id_width)->Get< float >();
 	Colourb color = properties.GetProperty(id_color)->Get< Colourb >();
 
-	auto font_effect = std::make_shared<FontEffectBlur>();
+	auto font_effect = MakeShared<FontEffectBlur>();
 	if (font_effect->Initialise(Math::RealToInteger(width)))
 	{
 		font_effect->SetColour(color);
@@ -146,5 +145,4 @@ SharedPtr<FontEffect> FontEffectBlurInstancer::InstanceFontEffect(const String& 
 	return nullptr;
 }
 
-}
-}
+} // namespace Rml

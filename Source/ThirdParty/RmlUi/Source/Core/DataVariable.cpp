@@ -29,7 +29,6 @@
 #include "../../Include/RmlUi/Core/DataVariable.h"
 
 namespace Rml {
-namespace Core {
 
 bool DataVariable::Get(Variant& variant) {
     return definition->Get(ptr, variant);
@@ -52,19 +51,19 @@ DataVariableType DataVariable::Type() {
 }
 
 
-bool VariableDefinition::Get(void* ptr, Variant& variant) {
+bool VariableDefinition::Get(void* /*ptr*/, Variant& /*variant*/) {
     Log::Message(Log::LT_WARNING, "Values can only be retrieved from scalar data types.");
     return false;
 }
-bool VariableDefinition::Set(void* ptr, const Variant& variant) {
+bool VariableDefinition::Set(void* /*ptr*/, const Variant& /*variant*/) {
     Log::Message(Log::LT_WARNING, "Values can only be assigned to scalar data types.");
     return false;
 }
-int VariableDefinition::Size(void* ptr) {
+int VariableDefinition::Size(void* /*ptr*/) {
     Log::Message(Log::LT_WARNING, "Tried to get the size from a non-array data type.");
     return 0;
 }
-DataVariable VariableDefinition::Child(void* ptr, const DataAddressEntry& address) {
+DataVariable VariableDefinition::Child(void* /*ptr*/, const DataAddressEntry& /*address*/) {
     Log::Message(Log::LT_WARNING, "Tried to get the child of a scalar type.");
     return DataVariable();
 }
@@ -86,5 +85,4 @@ DataVariable MakeLiteralIntVariable(int value)
     return DataVariable(&literal_int_definition, reinterpret_cast<void*>(static_cast<intptr_t>(value)));
 }
 
-}
-}
+} // namespace Rml

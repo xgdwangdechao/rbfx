@@ -26,8 +26,8 @@
  *
  */
 
-#ifndef RMLUICOREDATATYPEREGISTER_H
-#define RMLUICOREDATATYPEREGISTER_H
+#ifndef RMLUI_CORE_DATATYPEREGISTER_H
+#define RMLUI_CORE_DATATYPEREGISTER_H
 
 #include "Header.h"
 #include "Types.h"
@@ -38,8 +38,6 @@
 
 
 namespace Rml {
-namespace Core {
-
 
 template<typename T>
 struct is_valid_data_scalar {
@@ -91,7 +89,7 @@ public:
 		static_assert(std::is_class<T>::value, "Type must be a struct or class type.");
 		FamilyId id = Family<T>::Id();
 
-		auto struct_variable = std::make_unique<StructDefinition>();
+		auto struct_variable = MakeUnique<StructDefinition>();
 		StructDefinition* struct_variable_raw = struct_variable.get();
 
 		bool inserted = type_register.emplace(id, std::move(struct_variable)).second;
@@ -115,8 +113,7 @@ public:
 
 		FamilyId container_id = Family<Container>::Id();
 
-		auto array_variable = std::make_unique<ArrayDefinition<Container>>(value_variable);
-		ArrayDefinition<Container>* array_variable_raw = array_variable.get();
+		auto array_variable = MakeUnique<ArrayDefinition<Container>>(value_variable);
 
 		bool inserted = type_register.emplace(container_id, std::move(array_variable)).second;
 		if (!inserted)
@@ -138,7 +135,7 @@ public:
 		bool inserted = result.second;
 
 		if (inserted)
-			it->second = std::make_unique<MemberFuncDefinition<T>>(get_func, set_func);
+			it->second = MakeUnique<MemberFuncDefinition<T>>(get_func, set_func);
 
 		return it->second.get();
 	}
@@ -153,7 +150,7 @@ public:
 		UniquePtr<VariableDefinition>& definition = result.first->second;
 
 		if (inserted)
-			definition = std::make_unique<ScalarDefinition<T>>();
+			definition = MakeUnique<ScalarDefinition<T>>();
 
 		return definition.get();
 	}
@@ -193,17 +190,15 @@ template<typename Object>
 template<typename MemberType>
 inline StructHandle<Object>& StructHandle<Object>::RegisterMember(const String& name, MemberType Object::* member_ptr) {
 	VariableDefinition* member_type = type_register->GetOrAddScalar<MemberType>();
-	struct_definition->AddMember(name, std::make_unique<StructMemberObject<Object, MemberType>>(member_type, member_ptr));
+	struct_definition->AddMember(name, MakeUnique<StructMemberObject<Object, MemberType>>(member_type, member_ptr));
 	return *this;
 }
 template<typename Object>
 inline StructHandle<Object>& StructHandle<Object>::RegisterMemberFunc(const String& name, MemberGetFunc<Object> get_func, MemberSetFunc<Object> set_func) {
 	VariableDefinition* definition = type_register->RegisterMemberFunc<Object>(get_func, set_func);
-	struct_definition->AddMember(name, std::make_unique<StructMemberFunc>(definition));
+	struct_definition->AddMember(name, MakeUnique<StructMemberFunc>(definition));
 	return *this;
 }
 
-}
-}
-
+} // namespace Rml
 #endif

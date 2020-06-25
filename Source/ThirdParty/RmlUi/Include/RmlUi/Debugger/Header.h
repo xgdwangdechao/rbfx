@@ -15,7 +15,7 @@
  *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -26,14 +26,14 @@
  *
  */
 
-#ifndef RMLUIDEBUGGERHEADER_H
-#define RMLUIDEBUGGERHEADER_H
+#ifndef RMLUI_DEBUGGER_HEADER_H
+#define RMLUI_DEBUGGER_HEADER_H
 
 #include "../Core/Platform.h"
 
 #if !defined RMLUI_STATIC_LIB
 	#ifdef RMLUI_PLATFORM_WIN32
-		#ifdef RmlDebugger_EXPORTS
+		#ifdef RmlDebugger_EXPORTS || defined URHO3D_EXPORTS
 			#define RMLUIDEBUGGER_API __declspec(dllexport)
 		#else
 			#define RMLUIDEBUGGER_API __declspec(dllimport)

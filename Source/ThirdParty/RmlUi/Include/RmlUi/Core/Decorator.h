@@ -15,7 +15,7 @@
  *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -26,16 +26,14 @@
  *
  */
 
-#ifndef RMLUICOREDECORATOR_H
-#define RMLUICOREDECORATOR_H
+#ifndef RMLUI_CORE_DECORATOR_H
+#define RMLUI_CORE_DECORATOR_H
 
-#include <vector>
 #include "Header.h"
 #include "Texture.h"
 #include "Types.h"
 
 namespace Rml {
-namespace Core {
 
 class DecoratorInstancer;
 class Element;
@@ -92,10 +90,8 @@ private:
 	// Stores a list of textures in use by this decorator.
 	// Optimized for the common case of a single texture.
 	Texture first_texture;
-	std::vector< Texture > additional_textures;
+	Vector< Texture > additional_textures;
 };
 
-}
-}
-
+} // namespace Rml
 #endif

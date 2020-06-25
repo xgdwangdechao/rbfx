@@ -28,7 +28,6 @@
 
 #include "StyleSheetParser.h"
 #include "ComputeProperty.h"
-#include "StringCache.h"
 #include "StyleSheetFactory.h"
 #include "StyleSheetNode.h"
 #include "../../Include/RmlUi/Core/DecoratorInstancer.h"
@@ -44,8 +43,6 @@
 #include <string.h>
 
 namespace Rml {
-namespace Core {
-
 
 class AbstractPropertyParser {
 public:
@@ -214,7 +211,7 @@ bool StyleSheetParser::ParseKeyframeBlock(KeyframesMap& keyframes_map, const Str
 	StringList rule_list;
 	StringUtilities::ExpandString(rule_list, rules);
 
-	std::vector<float> rule_values;
+	Vector<float> rule_values;
 	rule_values.reserve(rule_list.size());
 
 	for (auto rule : rule_list)
@@ -244,7 +241,7 @@ bool StyleSheetParser::ParseKeyframeBlock(KeyframesMap& keyframes_map, const Str
 		auto it = std::find_if(keyframes.blocks.begin(), keyframes.blocks.end(), [selector](const KeyframeBlock& keyframe_block) { return Math::AbsoluteValue(keyframe_block.normalized_time - selector) < 0.0001f; });
 		if (it == keyframes.blocks.end())
 		{
-			keyframes.blocks.push_back(KeyframeBlock{ selector });
+			keyframes.blocks.emplace_back(selector);
 			it = (keyframes.blocks.end() - 1);
 		}
 		else
@@ -369,9 +366,9 @@ int StyleSheetParser::Parse(StyleSheetNode* node, Stream* _stream, const StyleSh
 					// Add style nodes to the root of the tree
 					for (size_t i = 0; i < rule_name_list.size(); i++)
 					{
-						auto source = std::make_shared<PropertySource>(stream_file_name, rule_line_number, rule_name_list[i]);
+						auto source = MakeShared<PropertySource>(stream_file_name, rule_line_number, rule_name_list[i]);
 						properties.SetSourceOfAllProperties(source);
-						ImportProperties(node, rule_name_list[i], properties, rule_count, rule_line_number);
+						ImportProperties(node, rule_name_list[i], properties, rule_count);
 					}
 
 					rule_count++;
@@ -393,13 +390,13 @@ int StyleSheetParser::Parse(StyleSheetNode* node, Stream* _stream, const StyleSh
 					String at_rule_identifier = pre_token_str.substr(0, pre_token_str.find(' '));
 					at_rule_name = StringUtilities::StripWhitespace(pre_token_str.substr(at_rule_identifier.size()));
 
-					if (at_rule_identifier == KEYFRAMES)
+					if (at_rule_identifier == "keyframes")
 					{
 						state = State::KeyframeBlock;
 					}
 					else if (at_rule_identifier == "decorator")
 					{
-						auto source = std::make_shared<PropertySource>(stream_file_name, (int)line_number, pre_token_str);
+						auto source = MakeShared<PropertySource>(stream_file_name, (int)line_number, pre_token_str);
 						ParseDecoratorBlock(at_rule_name, decorator_map, style_sheet, source);
 						
 						at_rule_name.clear();
@@ -500,16 +497,16 @@ int StyleSheetParser::Parse(StyleSheetNode* node, Stream* _stream, const StyleSh
 bool StyleSheetParser::ParseProperties(PropertyDictionary& parsed_properties, const String& properties)
 {
 	RMLUI_ASSERT(!stream);
-	auto stream_owner = std::make_unique<StreamMemory>((const byte*)properties.c_str(), properties.size());
-	stream = stream_owner.get();
+	StreamMemory stream_owner((const byte*)properties.c_str(), properties.size());
+	stream = &stream_owner;
 	PropertySpecificationParser parser(parsed_properties, StyleSheetSpecification::GetPropertySpecification());
-	bool success = ReadProperties(parser);
+	bool success = ReadProperties(parser, false);
 	stream = nullptr;
 	return success;
 }
 
 
-bool StyleSheetParser::ReadProperties(AbstractPropertyParser& property_parser)
+bool StyleSheetParser::ReadProperties(AbstractPropertyParser& property_parser, bool require_end_semicolon)
 {
 	String name;
 	String value;
@@ -592,14 +589,23 @@ bool StyleSheetParser::ReadProperties(AbstractPropertyParser& property_parser)
 		previous_character = character;
 	}
 
-	if (!name.empty() || !value.empty())
+	if (!require_end_semicolon && !name.empty() && !value.empty())
+	{
+		value = StringUtilities::StripWhitespace(value);
+
+		if (!property_parser.Parse(name, value))
+			Log::Message(Log::LT_WARNING, "Syntax error parsing property declaration '%s: %s;' in %s: %d.", name.c_str(), value.c_str(), stream_file_name.c_str(), line_number);
+	}
+	else if (!name.empty() || !value.empty())
+	{
 		Log::Message(Log::LT_WARNING, "Invalid property declaration '%s':'%s' at %s:%d", name.c_str(), value.c_str(), stream_file_name.c_str(), line_number);
+	}
 	
 	return true;
 }
 
 // Updates the StyleNode tree, creating new nodes as necessary, setting the definition index
-bool StyleSheetParser::ImportProperties(StyleSheetNode* node, String rule_name, const PropertyDictionary& properties, int rule_specificity, int rule_line_number)
+bool StyleSheetParser::ImportProperties(StyleSheetNode* node, String rule_name, const PropertyDictionary& properties, int rule_specificity)
 {
 	StyleSheetNode* leaf_node = node;
 
@@ -803,5 +809,4 @@ bool StyleSheetParser::FillBuffer()
 	return read;
 }
 
-}
-}
+} // namespace Rml

@@ -26,15 +26,14 @@
  *
  */
 
-#ifndef RMLUICORESTYLESHEET_H
-#define RMLUICORESTYLESHEET_H
+#ifndef RMLUI_CORE_STYLESHEET_H
+#define RMLUI_CORE_STYLESHEET_H
 
 #include "Traits.h"
 #include "PropertyDictionary.h"
 #include "Spritesheet.h"
 
 namespace Rml {
-namespace Core {
 
 class Element;
 class ElementDefinition;
@@ -47,12 +46,13 @@ struct Sprite;
 struct Spritesheet;
 
 struct KeyframeBlock {
+	KeyframeBlock(float normalized_time) : normalized_time(normalized_time) {}
 	float normalized_time;  // [0, 1]
 	PropertyDictionary properties;
 };
 struct Keyframes {
-	std::vector<PropertyId> property_ids;
-	std::vector<KeyframeBlock> blocks;
+	Vector<PropertyId> property_ids;
+	Vector<KeyframeBlock> blocks;
 };
 using KeyframesMap = UnorderedMap<String, Keyframes>;
 
@@ -73,7 +73,7 @@ using DecoratorSpecificationMap = UnorderedMap<String, DecoratorSpecification>;
 class RMLUICORE_API StyleSheet : public NonCopyMoveable
 {
 public:
-	typedef std::vector< StyleSheetNode* > NodeList;
+	typedef Vector< StyleSheetNode* > NodeList;
 	typedef UnorderedMap< size_t, NodeList > NodeIndex;
 
 	StyleSheet();
@@ -138,7 +138,5 @@ private:
 	mutable ElementDefinitionCache node_cache;
 };
 
-}
-}
-
+} // namespace Rml
 #endif

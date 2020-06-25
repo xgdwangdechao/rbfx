@@ -26,15 +26,14 @@
  *
  */
 
-#ifndef RMLUICOREXMLPARSER_H
-#define RMLUICOREXMLPARSER_H
+#ifndef RMLUI_CORE_XMLPARSER_H
+#define RMLUI_CORE_XMLPARSER_H
 
 #include <stack>
 #include "Header.h"
 #include "BaseXMLParser.h"
 
 namespace Rml {
-namespace Core {
 
 class DocumentHeader;
 class Element;
@@ -110,11 +109,9 @@ private:
 	XMLNodeHandler* active_handler;
 
 	// The parser stack.
-	using ParserStack = std::stack< ParseFrame >;
+	using ParserStack = Stack< ParseFrame >;
 	ParserStack stack;
 };
 
-}
-}
-
+} // namespace Rml
 #endif

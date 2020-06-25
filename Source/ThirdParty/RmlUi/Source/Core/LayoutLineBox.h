@@ -26,13 +26,12 @@
  *
  */
 
-#ifndef RMLUICORELAYOUTLINEBOX_H
-#define RMLUICORELAYOUTLINEBOX_H
+#ifndef RMLUI_CORE_LAYOUTLINEBOX_H
+#define RMLUI_CORE_LAYOUTLINEBOX_H
 
 #include "LayoutInlineBox.h"
 
 namespace Rml {
-namespace Core {
 
 class LayoutBlockBox;
 
@@ -98,7 +97,7 @@ private:
 	/// Appends an inline box to the end of the line box's list of inline boxes.
 	void AppendBox(LayoutInlineBox* box);
 
-	typedef std::vector< LayoutInlineBox* > InlineBoxList;
+	typedef Vector< LayoutInlineBox* > InlineBoxList;
 
 	// The block box containing this line.
 	LayoutBlockBox* parent;
@@ -120,7 +119,5 @@ private:
 	LayoutInlineBox* open_inline_box;
 };
 
-}
-}
-
+} // namespace Rml
 #endif

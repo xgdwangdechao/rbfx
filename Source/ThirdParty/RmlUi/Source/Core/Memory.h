@@ -26,15 +26,14 @@
  *
  */
 
-#ifndef RMLUICOREMEMORY_H
-#define RMLUICOREMEMORY_H
+#ifndef RMLUI_CORE_MEMORY_H
+#define RMLUI_CORE_MEMORY_H
 
 
 #include "../../Include/RmlUi/Core/Types.h"
+#include "../../Include/RmlUi/Core/Traits.h"
 
 namespace Rml {
-namespace Core {
-
 
 namespace Detail {
 
@@ -44,45 +43,18 @@ namespace Detail {
 		A very cheap allocator which only moves a pointer up and down during allocation and deallocation, respectively.
 		The allocator is initialized with some fixed memory. If it runs out, it falls back to malloc.
 		
-		Warning: Using this is quite dangerous as deallocation must happen in exact reverse order of allocation.
+		Warning: Using this is dangerous as deallocation must happen in exact reverse order of allocation.
 		
 		Do not use this class directly.
 	*/
 	class BasicStackAllocator
 	{
 	public:
-		BasicStackAllocator(size_t N) : N(N), data((byte*)malloc(N)), p(data)
-		{}
+		BasicStackAllocator(size_t N);
+		~BasicStackAllocator() noexcept;
 
-		~BasicStackAllocator() noexcept {
-			RMLUI_ASSERT(p == data);
-			free(data);
-		}
-
-		void* allocate(size_t alignment, size_t byte_size)
-		{
-			size_t available_space = N - ((byte*)p - data);
-
-			if (std::align(alignment, byte_size, p, available_space))
-			{
-				void* result = p;
-				p = (byte*)p + byte_size;
-				return result;
-			}
-
-			// Fall back to malloc
-			return malloc(byte_size);
-		}
-
-		void deallocate(void* obj) noexcept
-		{
-			if (obj < data || obj >= data + N)
-			{
-				free(obj);
-				return;
-			}
-			p = obj;
-		}
+		void* allocate(size_t alignment, size_t byte_size);
+		void deallocate(void* obj) noexcept;
 
 	private:
 		const size_t N;
@@ -104,7 +76,7 @@ namespace Detail {
 	heap on the very first construction of a global stack allocator, and will persist and be re-used after.
 	Falls back to malloc if there is not enough space left.
 
-	Warning: Using this is quite dangerous as deallocation must happen in exact reverse order of allocation.
+	Warning: Using this is dangerous as deallocation must happen in exact reverse order of allocation.
 	  Memory is shared between different global stack allocators. Should only be used for highly localized code,
 	  where memory is allocated and then quickly thrown away.
 */
@@ -163,7 +135,5 @@ private:
 	T* p;
 };
 
-}
-}
-
+} // namespace Rml
 #endif

@@ -35,7 +35,6 @@
 #include <algorithm>
 
 namespace Rml {
-namespace Core {
 
 FontFaceHandleDefault::FontFaceHandleDefault()
 {
@@ -251,8 +250,8 @@ int FontFaceHandleDefault::GenerateString(GeometryList& geometry, const String& 
 		RMLUI_ASSERT(geometry_index < (int)geometry.size());
 
 		// Bind the textures to the geometries.
-		for (int i = 0; i < num_textures; ++i)
-			geometry[geometry_index + i].SetTexture(layer->GetTexture(i));
+		for (int tex_index = 0; tex_index < num_textures; ++tex_index)
+			geometry[geometry_index + tex_index].SetTexture(layer->GetTexture(tex_index));
 
 		line_width = 0;
 		Character prior_character = Character::Null;
@@ -404,7 +403,7 @@ FontFaceLayer* FontFaceHandleDefault::GetOrCreateLayer(const SharedPtr<const Fon
 	layers.push_back(EffectLayerPair{ font_effect_ptr, nullptr });
 	auto& layer = layers.back().layer;
 	
-	layer = std::make_unique<FontFaceLayer>(font_effect);
+	layer = MakeUnique<FontFaceLayer>(font_effect);
 	GenerateLayer(layer.get());
 
 	return layer.get();
@@ -451,5 +450,4 @@ bool FontFaceHandleDefault::GenerateLayer(FontFaceLayer* layer)
 	return result;
 }
 
-}
-}
+} // namespace Rml

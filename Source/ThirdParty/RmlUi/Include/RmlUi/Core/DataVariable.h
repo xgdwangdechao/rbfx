@@ -26,8 +26,8 @@
  *
  */
 
-#ifndef RMLUICOREDATAVARIABLE_H
-#define RMLUICOREDATAVARIABLE_H
+#ifndef RMLUI_CORE_DATAVARIABLE_H
+#define RMLUI_CORE_DATAVARIABLE_H
 
 #include "Header.h"
 #include "Types.h"
@@ -37,8 +37,6 @@
 #include <iterator>
 
 namespace Rml {
-namespace Core {
-
 
 enum class DataVariableType { Scalar, Array, Struct, Function, MemberFunction };
 
@@ -107,14 +105,14 @@ public:
 
 	FuncDefinition(DataGetFunc get, DataSetFunc set) : VariableDefinition(DataVariableType::Function), get(std::move(get)), set(std::move(set)) {}
 
-	bool Get(void* ptr, Variant& variant) override
+	bool Get(void* /*ptr*/, Variant& variant) override
 	{
 		if (!get)
 			return false;
 		get(variant);
 		return true;
 	}
-	bool Set(void* ptr, const Variant& variant) override
+	bool Set(void* /*ptr*/, const Variant& variant) override
 	{
 		if (!set)
 			return false;
@@ -263,7 +261,5 @@ private:
 	MemberSetFunc<T> set;
 };
 
-}
-}
-
+} // namespace Rml
 #endif

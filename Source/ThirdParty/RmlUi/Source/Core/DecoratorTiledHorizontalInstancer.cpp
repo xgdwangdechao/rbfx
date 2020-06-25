@@ -30,7 +30,6 @@
 #include "DecoratorTiledHorizontal.h"
 
 namespace Rml {
-namespace Core {
 
 DecoratorTiledHorizontalInstancer::DecoratorTiledHorizontalInstancer() : DecoratorTiledInstancer(3)
 {
@@ -56,7 +55,7 @@ SharedPtr<Decorator> DecoratorTiledHorizontalInstancer::InstanceDecorator(const 
 	if (!GetTileProperties(tiles, textures, num_tiles, properties, interface))
 		return nullptr;
 
-	auto decorator = std::make_shared<DecoratorTiledHorizontal>();
+	auto decorator = MakeShared<DecoratorTiledHorizontal>();
 	if (!decorator->Initialise(tiles, textures))
 		return nullptr;
 
@@ -64,5 +63,4 @@ SharedPtr<Decorator> DecoratorTiledHorizontalInstancer::InstanceDecorator(const 
 }
 
 
-}
-}
+} // namespace Rml

@@ -27,9 +27,29 @@
  */
 
 #include "../../Include/RmlUi/Core/Factory.h"
+#include "../../Include/RmlUi/Core/Context.h"
+#include "../../Include/RmlUi/Core/ContextInstancer.h"
+#include "../../Include/RmlUi/Core/Core.h"
+#include "../../Include/RmlUi/Core/ElementDocument.h"
+#include "../../Include/RmlUi/Core/ElementInstancer.h"
+#include "../../Include/RmlUi/Core/ElementUtilities.h"
+#include "../../Include/RmlUi/Core/EventListenerInstancer.h"
 #include "../../Include/RmlUi/Core/StreamMemory.h"
+#include "../../Include/RmlUi/Core/StyleSheet.h"
 #include "../../Include/RmlUi/Core/SystemInterface.h"
-#include "../../Include/RmlUi/Core.h"
+
+#include "../../Include/RmlUi/Core/Elements/ElementForm.h"
+#include "../../Include/RmlUi/Core/Elements/ElementFormControlInput.h"
+#include "../../Include/RmlUi/Core/Elements/ElementFormControlDataSelect.h"
+#include "../../Include/RmlUi/Core/Elements/ElementFormControlSelect.h"
+#include "../../Include/RmlUi/Core/Elements/ElementFormControlSelect.h"
+#include "../../Include/RmlUi/Core/Elements/ElementFormControlTextArea.h"
+#include "../../Include/RmlUi/Core/Elements/ElementTabSet.h"
+#include "../../Include/RmlUi/Core/Elements/ElementProgressBar.h"
+#include "../../Include/RmlUi/Core/Elements/ElementDataGrid.h"
+#include "../../Include/RmlUi/Core/Elements/ElementDataGridExpandButton.h"
+#include "../../Include/RmlUi/Core/Elements/ElementDataGridCell.h"
+#include "../../Include/RmlUi/Core/Elements/ElementDataGridRow.h"
 
 #include "ContextInstancerDefault.h"
 #include "DataControllerDefault.h"
@@ -41,7 +61,6 @@
 #include "DecoratorNinePatch.h"
 #include "DecoratorGradient.h"
 #include "ElementHandle.h"
-#include "ElementImage.h"
 #include "ElementTextDefault.h"
 #include "EventInstancerDefault.h"
 #include "FontEffectBlur.h"
@@ -58,10 +77,16 @@
 #include "XMLNodeHandlerHead.h"
 #include "XMLNodeHandlerTemplate.h"
 #include "XMLParseTools.h"
+
+#include "Elements/ElementImage.h"
+#include "Elements/ElementTextSelection.h"
+#include "Elements/XMLNodeHandlerDataGrid.h"
+#include "Elements/XMLNodeHandlerTabSet.h"
+#include "Elements/XMLNodeHandlerTextArea.h"
+
 #include <algorithm>
 
 namespace Rml {
-namespace Core {
 
 // Element instancers.
 using ElementInstancerMap = UnorderedMap< String, ElementInstancer* >;
@@ -91,54 +116,73 @@ static StructuralDataViewInstancerMap structural_data_view_instancers;
 static StringList structural_data_view_attribute_names;
 
 // The context instancer.
-static ContextInstancer* context_instancer = nullptr;;
+static ContextInstancer* context_instancer = nullptr;
 
 // The event instancer
-static EventInstancer* event_instancer = nullptr;;
+static EventInstancer* event_instancer = nullptr;
 
 // Event listener instancer.
 static EventListenerInstancer* event_listener_instancer = nullptr;
 
-
 // Default instancers are constructed and destroyed on Initialise and Shutdown, respectively.
 struct DefaultInstancers {
-	template<typename T> using Ptr = UniquePtr<T>;
 
-	Ptr<ContextInstancer> context_default;
-	Ptr<EventInstancer> event_default;
+	UniquePtr<ContextInstancer> context_default;
+	UniquePtr<EventInstancer> event_default;
 
-	Ptr<ElementInstancer> element_default = std::make_unique<ElementInstancerElement>();
-	Ptr<ElementInstancer> element_text_default = std::make_unique<ElementInstancerTextDefault>();
-	Ptr<ElementInstancer> element_img = std::make_unique<ElementInstancerGeneric<ElementImage>>();
-	Ptr<ElementInstancer> element_handle = std::make_unique<ElementInstancerGeneric<ElementHandle>>();
-	Ptr<ElementInstancer> element_body = std::make_unique<ElementInstancerGeneric<ElementDocument>>();
+	// Basic elements
+	ElementInstancerElement element_default;
+	ElementInstancerTextDefault element_text_default;
+	ElementInstancerGeneric<ElementImage> element_img;
+	ElementInstancerGeneric<ElementHandle> element_handle;
+	ElementInstancerGeneric<ElementDocument> element_body;
 
-	Ptr<DecoratorInstancer> decorator_tiled_horizontal = std::make_unique<DecoratorTiledHorizontalInstancer>();
-	Ptr<DecoratorInstancer> decorator_tiled_vertical = std::make_unique<DecoratorTiledVerticalInstancer>();
-	Ptr<DecoratorInstancer> decorator_tiled_box = std::make_unique<DecoratorTiledBoxInstancer>();
-	Ptr<DecoratorInstancer> decorator_image = std::make_unique<DecoratorTiledImageInstancer>();
-	Ptr<DecoratorInstancer> decorator_ninepatch = std::make_unique<DecoratorNinePatchInstancer>();
-	Ptr<DecoratorInstancer> decorator_gradient = std::make_unique<DecoratorGradientInstancer>();
+	// Control elements
+	ElementInstancerGeneric<ElementForm> form;
+	ElementInstancerGeneric<ElementFormControlInput> input;
+	ElementInstancerGeneric<ElementFormControlDataSelect> dataselect;
+	ElementInstancerGeneric<ElementFormControlSelect> select;
 
-	Ptr<FontEffectInstancer> font_effect_blur = std::make_unique<FontEffectBlurInstancer>();
-	Ptr<FontEffectInstancer> font_effect_glow = std::make_unique<FontEffectGlowInstancer>();
-	Ptr<FontEffectInstancer> font_effect_outline = std::make_unique<FontEffectOutlineInstancer>();
-	Ptr<FontEffectInstancer> font_effect_shadow = std::make_unique<FontEffectShadowInstancer>();
+	ElementInstancerGeneric<ElementFormControlTextArea> textarea;
+	ElementInstancerGeneric<ElementTextSelection> selection;
+	ElementInstancerGeneric<ElementTabSet> tabset;
 
-	Ptr<DataViewInstancer> data_view_attribute = std::make_unique<DataViewInstancerDefault< DataViewAttribute >>();
-	Ptr<DataViewInstancer> data_view_class     = std::make_unique<DataViewInstancerDefault< DataViewClass >>();
-	Ptr<DataViewInstancer> data_view_if        = std::make_unique<DataViewInstancerDefault< DataViewIf >>();
-	Ptr<DataViewInstancer> data_view_visible   = std::make_unique<DataViewInstancerDefault< DataViewVisible >>();
-	Ptr<DataViewInstancer> data_view_rml       = std::make_unique<DataViewInstancerDefault< DataViewRml >>();
-	Ptr<DataViewInstancer> data_view_style     = std::make_unique<DataViewInstancerDefault< DataViewStyle >>();
-	Ptr<DataViewInstancer> data_view_text      = std::make_unique<DataViewInstancerDefault< DataViewText >>();
-	Ptr<DataViewInstancer> data_view_value     = std::make_unique<DataViewInstancerDefault< DataViewValue >>();
+	ElementInstancerGeneric<ElementProgressBar> progressbar;
 
-	Ptr<DataViewInstancer> structural_data_view_for = std::make_unique<DataViewInstancerDefault< DataViewFor >>();
+	ElementInstancerGeneric<ElementDataGrid> datagrid;
+	ElementInstancerGeneric<ElementDataGridExpandButton> datagrid_expand;
+	ElementInstancerGeneric<ElementDataGridCell> datagrid_cell;
+	ElementInstancerGeneric<ElementDataGridRow> datagrid_row;
 
-	Ptr<DataControllerInstancer> data_controller_value = std::make_unique<DataControllerInstancerDefault< DataControllerValue >>();
-	Ptr<DataControllerInstancer> data_controller_event = std::make_unique<DataControllerInstancerDefault< DataControllerEvent >>();
+	// Decorators
+	DecoratorTiledHorizontalInstancer decorator_tiled_horizontal;
+	DecoratorTiledVerticalInstancer decorator_tiled_vertical;
+	DecoratorTiledBoxInstancer decorator_tiled_box;
+	DecoratorTiledImageInstancer decorator_image;
+	DecoratorNinePatchInstancer decorator_ninepatch;
+	DecoratorGradientInstancer decorator_gradient;
 
+	// Font effects
+	FontEffectBlurInstancer font_effect_blur;
+	FontEffectGlowInstancer font_effect_glow;
+	FontEffectOutlineInstancer font_effect_outline;
+	FontEffectShadowInstancer font_effect_shadow;
+
+	// Data binding views
+	DataViewInstancerDefault<DataViewAttribute> data_view_attribute;
+	DataViewInstancerDefault<DataViewClass> data_view_class;
+	DataViewInstancerDefault<DataViewIf> data_view_if;
+	DataViewInstancerDefault<DataViewVisible> data_view_visible;
+	DataViewInstancerDefault<DataViewRml> data_view_rml;
+	DataViewInstancerDefault<DataViewStyle> data_view_style;
+	DataViewInstancerDefault<DataViewText> data_view_text;
+	DataViewInstancerDefault<DataViewValue> data_view_value;
+
+	DataViewInstancerDefault<DataViewFor> structural_data_view_for;
+
+	// Data binding controllers
+	DataControllerInstancerDefault<DataControllerValue> data_controller_value;
+	DataControllerInstancerDefault<DataControllerEvent> data_controller_event;
 };
 
 static UniquePtr<DefaultInstancers> default_instancers;
@@ -155,19 +199,19 @@ Factory::~Factory()
 
 bool Factory::Initialise()
 {
-	default_instancers = std::make_unique<DefaultInstancers>();
+	default_instancers = MakeUnique<DefaultInstancers>();
 
-	// Bind the default context instancer.
+	// Default context instancer
 	if (!context_instancer)
 	{
-		default_instancers->context_default = std::make_unique<ContextInstancerDefault>();
+		default_instancers->context_default = MakeUnique<ContextInstancerDefault>();
 		context_instancer = default_instancers->context_default.get();
 	}
 
-	// Bind default event instancer
+	// Default event instancer
 	if (!event_instancer)
 	{
-		default_instancers->event_default = std::make_unique<EventInstancerDefault>();
+		default_instancers->event_default = MakeUnique<EventInstancerDefault>();
 		event_instancer = default_instancers->event_default.get();
 	}
 
@@ -175,46 +219,69 @@ bool Factory::Initialise()
 	if (!event_listener_instancer)
 		event_listener_instancer = nullptr;
 
-	// Bind the default element instancers
-	RegisterElementInstancer("*", default_instancers->element_default.get());
-	RegisterElementInstancer("img", default_instancers->element_img.get());
-	RegisterElementInstancer("#text", default_instancers->element_text_default.get());
-	RegisterElementInstancer("handle", default_instancers->element_handle.get());
-	RegisterElementInstancer("body", default_instancers->element_body.get());
+	// Basic element instancers
+	RegisterElementInstancer("*", &default_instancers->element_default);
+	RegisterElementInstancer("img", &default_instancers->element_img);
+	RegisterElementInstancer("#text", &default_instancers->element_text_default);
+	RegisterElementInstancer("handle", &default_instancers->element_handle);
+	RegisterElementInstancer("body", &default_instancers->element_body);
 
-	// Bind the default decorator instancers
-	RegisterDecoratorInstancer("tiled-horizontal", default_instancers->decorator_tiled_horizontal.get());
-	RegisterDecoratorInstancer("tiled-vertical", default_instancers->decorator_tiled_vertical.get());
-	RegisterDecoratorInstancer("tiled-box", default_instancers->decorator_tiled_box.get());
-	RegisterDecoratorInstancer("image", default_instancers->decorator_image.get());
-	RegisterDecoratorInstancer("ninepatch", default_instancers->decorator_ninepatch.get());
-	RegisterDecoratorInstancer("gradient", default_instancers->decorator_gradient.get());
+	// Control element instancers
+	RegisterElementInstancer("form", &default_instancers->form);
+	RegisterElementInstancer("input", &default_instancers->input);
+	RegisterElementInstancer("dataselect", &default_instancers->dataselect);
+	RegisterElementInstancer("select", &default_instancers->select);
 
-	RegisterFontEffectInstancer("blur", default_instancers->font_effect_blur.get());
-	RegisterFontEffectInstancer("glow", default_instancers->font_effect_glow.get());
-	RegisterFontEffectInstancer("outline", default_instancers->font_effect_outline.get());
-	RegisterFontEffectInstancer("shadow", default_instancers->font_effect_shadow.get());
+	RegisterElementInstancer("textarea", &default_instancers->textarea);
+	RegisterElementInstancer("#selection", &default_instancers->selection);
+	RegisterElementInstancer("tabset", &default_instancers->tabset);
 
-	// Register the core XML node handlers.
-	XMLParser::RegisterNodeHandler("", std::make_shared<XMLNodeHandlerDefault>());
-	XMLParser::RegisterNodeHandler("body", std::make_shared<XMLNodeHandlerBody>());
-	XMLParser::RegisterNodeHandler("head", std::make_shared<XMLNodeHandlerHead>());
-	XMLParser::RegisterNodeHandler("template", std::make_shared<XMLNodeHandlerTemplate>());
+	RegisterElementInstancer("progressbar", &default_instancers->progressbar);
 
-	// Register the default data views
-	RegisterDataViewInstancer(default_instancers->data_view_attribute.get(), "attr",     false);
-	RegisterDataViewInstancer(default_instancers->data_view_class.get(),     "class",    false);
-	RegisterDataViewInstancer(default_instancers->data_view_if.get(),        "if",       false);
-	RegisterDataViewInstancer(default_instancers->data_view_visible.get(),   "visible",  false);
-	RegisterDataViewInstancer(default_instancers->data_view_rml.get(),       "rml",      false);
-	RegisterDataViewInstancer(default_instancers->data_view_style.get(),     "style",    false);
-	RegisterDataViewInstancer(default_instancers->data_view_text.get(),      "text",     false);
-	RegisterDataViewInstancer(default_instancers->data_view_value.get(),     "value",    false);
-	RegisterDataViewInstancer(default_instancers->structural_data_view_for.get(), "for", true );
+	RegisterElementInstancer("datagrid", &default_instancers->datagrid);
+	RegisterElementInstancer("datagridexpand", &default_instancers->datagrid_expand);
+	RegisterElementInstancer("#rmlctl_datagridcell", &default_instancers->datagrid_cell);
+	RegisterElementInstancer("#rmlctl_datagridrow", &default_instancers->datagrid_row);
 
-	RegisterDataControllerInstancer(default_instancers->data_controller_value.get(), "value");
-	RegisterDataControllerInstancer(default_instancers->data_controller_event.get(), "event");
+	// Decorator instancers
+	RegisterDecoratorInstancer("tiled-horizontal", &default_instancers->decorator_tiled_horizontal);
+	RegisterDecoratorInstancer("tiled-vertical", &default_instancers->decorator_tiled_vertical);
+	RegisterDecoratorInstancer("tiled-box", &default_instancers->decorator_tiled_box);
+	RegisterDecoratorInstancer("image", &default_instancers->decorator_image);
+	RegisterDecoratorInstancer("ninepatch", &default_instancers->decorator_ninepatch);
+	RegisterDecoratorInstancer("gradient", &default_instancers->decorator_gradient);
 
+	// Font effect instancers
+	RegisterFontEffectInstancer("blur", &default_instancers->font_effect_blur);
+	RegisterFontEffectInstancer("glow", &default_instancers->font_effect_glow);
+	RegisterFontEffectInstancer("outline", &default_instancers->font_effect_outline);
+	RegisterFontEffectInstancer("shadow", &default_instancers->font_effect_shadow);
+
+	// Data binding views
+	RegisterDataViewInstancer(&default_instancers->data_view_attribute,      "attr",    false);
+	RegisterDataViewInstancer(&default_instancers->data_view_class,          "class",   false);
+	RegisterDataViewInstancer(&default_instancers->data_view_if,             "if",      false);
+	RegisterDataViewInstancer(&default_instancers->data_view_visible,        "visible", false);
+	RegisterDataViewInstancer(&default_instancers->data_view_rml,            "rml",     false);
+	RegisterDataViewInstancer(&default_instancers->data_view_style,          "style",   false);
+	RegisterDataViewInstancer(&default_instancers->data_view_text,           "text",    false);
+	RegisterDataViewInstancer(&default_instancers->data_view_value,          "value",   false);
+	RegisterDataViewInstancer(&default_instancers->structural_data_view_for, "for",     true );
+
+	// Data binding controllers
+	RegisterDataControllerInstancer(&default_instancers->data_controller_value, "value");
+	RegisterDataControllerInstancer(&default_instancers->data_controller_event, "event");
+
+	// XML node handlers
+	XMLParser::RegisterNodeHandler("", MakeShared<XMLNodeHandlerDefault>());
+	XMLParser::RegisterNodeHandler("body", MakeShared<XMLNodeHandlerBody>());
+	XMLParser::RegisterNodeHandler("head", MakeShared<XMLNodeHandlerHead>());
+	XMLParser::RegisterNodeHandler("template", MakeShared<XMLNodeHandlerTemplate>());
+
+	// XML node handlers for control elements
+	XMLParser::RegisterNodeHandler("datagrid", MakeShared<XMLNodeHandlerDataGrid>());
+	XMLParser::RegisterNodeHandler("tabset", MakeShared<XMLNodeHandlerTabSet>());
+	XMLParser::RegisterNodeHandler("textarea", MakeShared<XMLNodeHandlerTextArea>());
 
 	return true;
 }
@@ -342,7 +409,7 @@ bool Factory::InstanceElementText(Element* parent, const String& in_text)
 	if (parse_as_rml)
 	{
 		RMLUI_ZoneScopedNC("InstanceStream", 0xDC143C);
-		auto stream = std::make_unique<StreamMemory>(text.size() + 32);
+		auto stream = MakeUnique<StreamMemory>(text.size() + 32);
 		stream->Write("<body>", 6);
 		stream->Write(text);
 		stream->Write("</body>", 7);
@@ -394,7 +461,7 @@ bool Factory::InstanceElementStream(Element* parent, Stream* stream)
 }
 
 // Instances a element tree based on the stream
-ElementPtr Factory::InstanceDocumentStream(Rml::Core::Context* context, Stream* stream)
+ElementPtr Factory::InstanceDocumentStream(Context* context, Stream* stream)
 {
 	RMLUI_ZoneScoped;
 
@@ -458,14 +525,14 @@ FontEffectInstancer* Factory::GetFontEffectInstancer(const String& name)
 // Creates a style sheet containing the passed in styles.
 SharedPtr<StyleSheet> Factory::InstanceStyleSheetString(const String& string)
 {
-	auto memory_stream = std::make_unique<StreamMemory>((const byte*) string.c_str(), string.size());
+	auto memory_stream = MakeUnique<StreamMemory>((const byte*) string.c_str(), string.size());
 	return InstanceStyleSheetStream(memory_stream.get());
 }
 
 // Creates a style sheet from a file.
 SharedPtr<StyleSheet> Factory::InstanceStyleSheetFile(const String& file_name)
 {
-	auto file_stream = std::make_unique<StreamFile>();
+	auto file_stream = MakeUnique<StreamFile>();
 	file_stream->Open(file_name);
 	return InstanceStyleSheetStream(file_stream.get());
 }
@@ -473,7 +540,7 @@ SharedPtr<StyleSheet> Factory::InstanceStyleSheetFile(const String& file_name)
 // Creates a style sheet from an Stream.
 SharedPtr<StyleSheet> Factory::InstanceStyleSheetStream(Stream* stream)
 {
-	SharedPtr<StyleSheet> style_sheet = std::make_shared<StyleSheet>();
+	SharedPtr<StyleSheet> style_sheet = MakeShared<StyleSheet>();
 	if (style_sheet->LoadStyleSheet(stream))
 	{
 		return style_sheet;
@@ -581,5 +648,4 @@ const StringList& Factory::GetStructuralDataViewAttributeNames()
 	return structural_data_view_attribute_names;
 }
 
-}
-}
+} // namespace Rml

@@ -38,7 +38,6 @@
 #endif
 
 namespace Rml {
-namespace Core {
 
 class DataParser;
 
@@ -101,7 +100,7 @@ struct InstructionData {
 namespace Parse {
 	static void Assignment(DataParser& parser);
 	static void Expression(DataParser& parser);
-};
+}
 
 
 class DataParser {
@@ -389,7 +388,7 @@ namespace Parse {
 		bool looping = true;
 		while (looping)
 		{
-			switch (char c = parser.Look())
+			switch (parser.Look())
 			{
 			case '&': And(parser); break;
 			case '|':
@@ -424,7 +423,7 @@ namespace Parse {
 		bool looping = true;
 		while (looping)
 		{
-			switch (const char c = parser.Look())
+			switch (parser.Look())
 			{
 			case '=': Equal(parser); break;
 			case '!': NotEqual(parser); break;
@@ -443,7 +442,7 @@ namespace Parse {
 		bool looping = true;
 		while (looping)
 		{
-			switch (const char c = parser.Look())
+			switch (parser.Look())
 			{
 			case '+': Add(parser); break;
 			case '-': Subtract(parser); break;
@@ -461,7 +460,7 @@ namespace Parse {
 		bool looping = true;
 		while (looping)
 		{
-			switch (const char c = parser.Look())
+			switch (parser.Look())
 			{
 			case '*': Multiply(parser); break;
 			case '/': Divide(parser); break;
@@ -804,8 +803,8 @@ public:
 
 private:
 	Variant R, L, C;
-	std::stack<Variant> stack;
-	std::vector<Variant> arguments;
+	Stack<Variant> stack;
+	Vector<Variant> arguments;
 
 	const Program& program;
 	const AddressList& addresses;
@@ -980,7 +979,7 @@ struct TestParser {
 		DataModelConstructor handle(&model, &type_register);
 		handle.Bind("radius", &radius);
 		handle.Bind("color_name", &color_name);
-		handle.BindFunc("color_value", [this](Rml::Core::Variant& variant) {
+		handle.BindFunc("color_value", [this](Variant& variant) {
 			variant = ToString(color_value);
 		});
 
@@ -1187,5 +1186,4 @@ bool DataExpressionInterface::EventCallback(const String& name, const VariantLis
 	return true;
 }
 
-}
-}
+} // namespace Rml

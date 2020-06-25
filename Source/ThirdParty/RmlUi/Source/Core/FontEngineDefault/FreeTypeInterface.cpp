@@ -34,14 +34,13 @@
 #include FT_FREETYPE_H
 
 namespace Rml {
-namespace Core {
 
 static FT_Library ft_library = nullptr;
 
 
 static bool BuildGlyph(FT_Face ft_face, Character character, FontGlyphMap& glyphs);
 static void BuildGlyphMap(FT_Face ft_face, int size, FontGlyphMap& glyphs);
-static void GenerateMetrics(FT_Face ft_face, const FontGlyphMap& glyphs, FontMetrics& metrics);
+static void GenerateMetrics(FT_Face ft_face, FontMetrics& metrics);
 
 
 bool FreeType::Initialise()
@@ -139,7 +138,7 @@ bool FreeType::InitialiseFaceHandle(FontFaceHandleFreetype face, int font_size, 
 	BuildGlyphMap(ft_face, font_size, glyphs);
 
 	// Generate the metrics for the handle.
-	GenerateMetrics(ft_face, glyphs, metrics);
+	GenerateMetrics(ft_face, metrics);
 
 	return true;
 }
@@ -356,7 +355,7 @@ static bool BuildGlyph(FT_Face ft_face, Character character, FontGlyphMap& glyph
 	return true;
 }
 
-static void GenerateMetrics(FT_Face ft_face, const FontGlyphMap& glyphs, FontMetrics& metrics)
+static void GenerateMetrics(FT_Face ft_face, FontMetrics& metrics)
 {
 	metrics.line_height = ft_face->size->metrics.height >> 6;
 	metrics.baseline = metrics.line_height - (ft_face->size->metrics.ascender >> 6);
@@ -374,5 +373,4 @@ static void GenerateMetrics(FT_Face ft_face, const FontGlyphMap& glyphs, FontMet
 }
 
 
-}
-}
+} // namespace Rml

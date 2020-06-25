@@ -30,7 +30,6 @@
 #include "DecoratorTiledImage.h"
 
 namespace Rml {
-namespace Core {
 
 DecoratorTiledImageInstancer::DecoratorTiledImageInstancer() : DecoratorTiledInstancer(1)
 {
@@ -53,7 +52,7 @@ SharedPtr<Decorator> DecoratorTiledImageInstancer::InstanceDecorator(const Strin
 	if (!GetTileProperties(&tile, &texture, 1, properties, interface))
 		return nullptr;
 	
-	auto decorator = std::make_shared<DecoratorTiledImage>();
+	auto decorator = MakeShared<DecoratorTiledImage>();
 
 	if (!decorator->Initialise(tile, texture))
 		return nullptr;
@@ -61,5 +60,4 @@ SharedPtr<Decorator> DecoratorTiledImageInstancer::InstanceDecorator(const Strin
 	return decorator;
 }
 
-}
-}
+} // namespace Rml

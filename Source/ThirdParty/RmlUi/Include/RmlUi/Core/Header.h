@@ -15,7 +15,7 @@
  *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- *
+ * 
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -26,8 +26,8 @@
  *
  */
 
-#ifndef RMLUICOREHEADER_H
-#define RMLUICOREHEADER_H
+#ifndef RMLUI_CORE_HEADER_H
+#define RMLUI_CORE_HEADER_H
 
 #include "Platform.h"
 
@@ -40,7 +40,7 @@
 			#define RMLUICORE_API __declspec(dllexport)
 			// Note: Changing a RMLUICORE_API_INLINE method
 			// breaks ABI compatibility!!
-
+			
 			// This results in an exported method from the DLL
 			// that may be inlined in DLL clients, or if not
 			// possible the client may choose to import the copy

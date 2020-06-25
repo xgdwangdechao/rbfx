@@ -26,17 +26,17 @@
  *
  */
 
-#ifndef RMLUICOREDATAMODEL_H
-#define RMLUICOREDATAMODEL_H
+#ifndef RMLUI_CORE_DATAMODEL_H
+#define RMLUI_CORE_DATAMODEL_H
 
 #include "Header.h"
 #include "Types.h"
 #include "Traits.h"
 #include "DataTypes.h"
 #include "DataTypeRegister.h"
+#include <functional>
 
 namespace Rml {
-namespace Core {
 
 class DataViews;
 class DataControllers;
@@ -169,7 +169,7 @@ public:
 	// Register an array type.
 	// @note The type applies to every data model associated with the current Context.
 	// @note If 'Container::value_type' represents a non-scalar type, that type must already have been registered with the appropriate 'Register...()' functions.
-	// @note Container requires the following functions to be implemented: size() and begin(). This is satisfied by several containers such as std::vector and std::array.
+	// @note Container requires the following functions to be implemented: size() and begin(). This is satisfied by several containers such as Vector and Array.
 	template<typename Container>
 	bool RegisterArray() {
 		return type_register->RegisterArray<Container>();
@@ -189,7 +189,5 @@ private:
 	DataTypeRegister* type_register;
 };
 
-}
-}
-
+} // namespace Rml
 #endif

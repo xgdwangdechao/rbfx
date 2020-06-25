@@ -33,7 +33,6 @@
 #include "TextureLayoutTexture.h"
 
 namespace Rml {
-namespace Core {
 
 /**
 	A texture layout generates and stores a layout of rectangles within a series of textures. It is
@@ -76,14 +75,12 @@ public:
 	bool GenerateLayout(int max_texture_dimensions);
 
 private:
-	using RectangleList = std::vector< TextureLayoutRectangle >;
-	using TextureList = std::vector< TextureLayoutTexture >;
+	using RectangleList = Vector< TextureLayoutRectangle >;
+	using TextureList = Vector< TextureLayoutTexture >;
 
 	TextureList textures;
 	RectangleList rectangles;
 };
 
-}
-}
-
+} // namespace Rml
 #endif

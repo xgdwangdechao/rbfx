@@ -26,14 +26,13 @@
  *
  */
 
-#ifndef RMLUICORESTYLESHEETPARSER_H
-#define RMLUICORESTYLESHEETPARSER_H
+#ifndef RMLUI_CORE_STYLESHEETPARSER_H
+#define RMLUI_CORE_STYLESHEETPARSER_H
 
 #include "../../Include/RmlUi/Core/StyleSheet.h"
 #include "../../Include/RmlUi/Core/Types.h"
 
 namespace Rml {
-namespace Core {
 
 class PropertyDictionary;
 class Stream;
@@ -81,14 +80,15 @@ private:
 	// Parses properties from the parse buffer into the dictionary
 	// @param properties The dictionary to store the properties in
 	// @param property_specification The specification used to parse the values. Normally the default stylesheet specification, but not for e.g. all at-rules such as decorators.
-	bool ReadProperties(AbstractPropertyParser& property_parser);
+	// @param require_end_semicolon True to require a ';' character after the final property.
+	bool ReadProperties(AbstractPropertyParser& property_parser, bool require_end_semicolon = true);
 
 	// Import properties into the stylesheet node
 	// @param node Node to import into
 	// @param names The names of the nodes
 	// @param properties The dictionary of properties
 	// @param rule_specificity The specifity of the rule
-	bool ImportProperties(StyleSheetNode* node, String rule_name, const PropertyDictionary& properties, int rule_specificity, int rule_line_number);
+	bool ImportProperties(StyleSheetNode* node, String rule_name, const PropertyDictionary& properties, int rule_specificity);
 
 	// Attempts to parse a @keyframes block
 	bool ParseKeyframeBlock(KeyframesMap & keyframes_map, const String & identifier, const String & rules, const PropertyDictionary & properties);
@@ -112,7 +112,5 @@ private:
 	bool FillBuffer();
 };
 
-}
-}
-
+} // namespace Rml
 #endif
