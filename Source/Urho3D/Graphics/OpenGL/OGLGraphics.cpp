@@ -1176,6 +1176,7 @@ void Graphics::SetShaderConstantBuffers(ea::span<const ConstantBufferRange, MAX_
         return;
     }
 
+#ifndef GL_ES_VERSION_2_0
     for (unsigned i = 0; i < MAX_SHADER_PARAMETER_GROUPS; ++i)
     {
         const ConstantBufferRange& range = constantBuffers[i];
@@ -1187,6 +1188,7 @@ void Graphics::SetShaderConstantBuffers(ea::span<const ConstantBufferRange, MAX_
             constantBuffers_[i] = range;
         }
     }
+#endif
 }
 
 void Graphics::SetShaderParameter(StringHash param, const float data[], unsigned count)
