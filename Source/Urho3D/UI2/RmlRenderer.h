@@ -61,14 +61,25 @@ public:
     void ReleaseTexture(Rml::TextureHandle textureHandle) override;
     void SetTransform(const Rml::Matrix4f* transform) override;
 
+    void SetScissorRegion(const Matrix4& projection, const IntRect& scissor);
+
 // private:
     bool scrissorEnabled_ = false;
+    bool transformEnabled_ = false;
     IntRect scissor_;
     WeakPtr<Context> context_;
     WeakPtr<Graphics> graphics_;
     SharedPtr<VertexBuffer> vertexBuffer_;
     SharedPtr<IndexBuffer> indexBuffer_;
     Matrix4 matrix_ = Matrix4::IDENTITY;
+
+    SharedPtr<ShaderVariation> noTexturePS_;
+    SharedPtr<ShaderVariation> noTextureVS_;
+    SharedPtr<ShaderVariation> textureVS_;
+    SharedPtr<ShaderVariation> textureOpaquePS_;
+    SharedPtr<ShaderVariation> textureAlphaPS_;
+    SharedPtr<ShaderVariation> stencilPS_;
+    SharedPtr<ShaderVariation> stencilVS_;
 };
 
 }   // namespace Detail

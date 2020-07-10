@@ -40,6 +40,13 @@ RmlRenderer::RmlRenderer(Context* context)
     , vertexBuffer_(context->CreateObject<VertexBuffer>())
     , indexBuffer_(context->CreateObject<IndexBuffer>())
 {
+    stencilPS_ = graphics_->GetShader(PS, "Stencil");
+    stencilVS_ = graphics_->GetShader(VS, "Stencil");
+    noTexturePS_ = graphics_->GetShader(PS, "Basic", "VERTEXCOLOR");
+    noTextureVS_ = graphics_->GetShader(VS, "Basic", "VERTEXCOLOR");
+    textureVS_ = graphics_->GetShader(VS, "Basic", "DIFFMAP VERTEXCOLOR");
+    textureOpaquePS_ = graphics_->GetShader(PS, "Basic", "DIFFMAP VERTEXCOLOR");
+    textureAlphaPS_ = graphics_->GetShader(PS, "Basic", "ALPHAMAP VERTEXCOLOR");
 }
 
 void RmlRenderer::CompileGeometry(CompiledGeometryForRml& compiledGeometryOut, Rml::Vertex* vertices, int numVertices, int* indices, int numIndices, const Rml::TextureHandle texture)
@@ -85,6 +92,32 @@ Rml::CompiledGeometryHandle RmlRenderer::CompileGeometry(Rml::Vertex* vertices, 
     return reinterpret_cast<Rml::CompiledGeometryHandle>(geom);
 }
 
+Urho3D::Matrix4 ToUrho3D(const Rml::Matrix4f* src)
+{
+    Urho3D::Matrix4 dest;
+
+    dest.m00_ = src->GetRow(0)[0];
+    dest.m01_ = src->GetRow(0)[1];
+    dest.m02_ = src->GetRow(0)[2];
+    dest.m03_ = src->GetRow(0)[3];
+
+    dest.m10_ = src->GetRow(1)[0];
+    dest.m11_ = src->GetRow(1)[1];
+    dest.m12_ = src->GetRow(1)[2];
+    dest.m13_ = src->GetRow(1)[3];
+
+    dest.m20_ = src->GetRow(2)[0];
+    dest.m21_ = src->GetRow(2)[1];
+    dest.m22_ = src->GetRow(2)[2];
+    dest.m23_ = src->GetRow(2)[3];
+
+    dest.m30_ = src->GetRow(3)[0];
+    dest.m31_ = src->GetRow(3)[1];
+    dest.m32_ = src->GetRow(3)[2];
+    dest.m33_ = src->GetRow(3)[3];
+
+    return dest;
+}
 void RmlRenderer::RenderCompiledGeometry(Rml::CompiledGeometryHandle geometryHandle, const Rml::Vector2f& translation)
 {
     CompiledGeometryForRml* geometry = reinterpret_cast<CompiledGeometryForRml*>(geometryHandle);
@@ -110,18 +143,22 @@ void RmlRenderer::RenderCompiledGeometry(Rml::CompiledGeometryHandle geometryHan
 
     float uiScale_ = 1;
     Matrix4 projection(Matrix4::IDENTITY);
-    projection.m00_ = scale.x_ * uiScale_;
+    /*projection.m00_ = scale.x_ * uiScale_;
     projection.m03_ = offset.x_;
     projection.m11_ = scale.y_ * uiScale_;
     projection.m13_ = offset.y_;
     projection.m22_ = 1.0f;
     projection.m23_ = 0.0f;
-    projection.m33_ = 1.0f;
+    projection.m33_ = 1.0f;*/
+
+    Rml::Matrix4f rprojection = Rml::Matrix4f::ProjectOrtho(0.f, static_cast<float>(graphics_->GetWidth()), static_cast<float>(graphics_->GetHeight()), 0.f, -100000000000.f, 100000000000.f);
+    projection = ToUrho3D(&rprojection);
+
 
     graphics_->ClearParameterSources();
     graphics_->SetBlendMode(BLEND_ALPHA);
     graphics_->SetColorWrite(true);
-    graphics_->SetCullMode(CULL_CW);
+    graphics_->SetCullMode(CULL_NONE);
     graphics_->SetDepthTest(CMP_ALWAYS);
     graphics_->SetDepthWrite(false);
     graphics_->SetFillMode(FILL_SOLID);
@@ -129,49 +166,10 @@ void RmlRenderer::RenderCompiledGeometry(Rml::CompiledGeometryHandle geometryHan
     graphics_->SetVertexBuffer(geometry->vertexBuffer_);
     graphics_->SetIndexBuffer(geometry->indexBuffer_);
 
-    ShaderVariation* ps;
-    ShaderVariation* vs;
-
-    if (geometry->texture_.Null())
-    {
-        ps = graphics_->GetShader(PS, "Basic", "VERTEXCOLOR");
-        vs = graphics_->GetShader(VS, "Basic", "VERTEXCOLOR");
-    }
-    else
-    {
-        // If texture contains only an alpha channel, use alpha shader (for fonts)
-        vs = graphics_->GetShader(VS, "Basic", "DIFFMAP VERTEXCOLOR");
-        if (geometry->texture_->GetFormat() == Graphics::GetAlphaFormat())
-            ps = graphics_->GetShader(PS, "Basic", "ALPHAMAP VERTEXCOLOR");
-        else
-            ps = graphics_->GetShader(PS, "Basic", "DIFFMAP VERTEXCOLOR");
-    }
-    graphics_->SetTexture(0, geometry->texture_);
-
-    // Apply translation
-    Matrix3x4 trans(matrix_);
-    trans.SetTranslation({translation.x, translation.y, 0.f});
-
-    graphics_->SetShaders(vs, ps);
-
-   if (graphics_->NeedParameterUpdate(SP_OBJECT, this))
-        graphics_->SetShaderParameter(VSP_MODEL, trans);
-    if (graphics_->NeedParameterUpdate(SP_CAMERA, this))
-        graphics_->SetShaderParameter(VSP_VIEWPROJ, projection);
-    if (graphics_->NeedParameterUpdate(SP_MATERIAL, this))
-        graphics_->SetShaderParameter(PSP_MATDIFFCOLOR, Color(1.0f, 1.0f, 1.0f, 1.0f));
-
-    float elapsedTime = context_->GetSubsystem<Time>()->GetElapsedTime();
-    graphics_->SetShaderParameter(VSP_ELAPSEDTIME, elapsedTime);
-    graphics_->SetShaderParameter(PSP_ELAPSEDTIME, elapsedTime);
-
+    graphics_->SetTexture(0, nullptr);
     if (scrissorEnabled_)
     {
         IntRect scissor = scissor_;
-        // scissor.left_ += translation.x;
-        // scissor.right_ += translation.x;
-        // scissor.top_ += translation.y;
-        // scissor.bottom_ += translation.y;
         scissor.left_ = (int)(scissor.left_ * uiScale_);
         scissor.top_ = (int)(scissor.top_ * uiScale_);
         scissor.right_ = (int)(scissor.right_ * uiScale_);
@@ -187,10 +185,48 @@ void RmlRenderer::RenderCompiledGeometry(Rml::CompiledGeometryHandle geometryHan
             scissor.bottom_ = viewSize.y_ - top;
         }
 #endif
-        graphics_->SetScissorTest(true, scissor);
+        SetScissorRegion(projection, scissor);
     }
     else
         graphics_->SetScissorTest(false);
+
+
+    ShaderVariation* ps;
+    ShaderVariation* vs;
+
+    if (geometry->texture_.Null())
+    {
+        ps = noTexturePS_;
+        vs = noTextureVS_;
+    }
+    else
+    {
+        // If texture contains only an alpha channel, use alpha shader (for fonts)
+        vs = textureVS_;
+        if (geometry->texture_->GetFormat() == Graphics::GetAlphaFormat())
+            ps = textureAlphaPS_;
+        else
+            ps = textureOpaquePS_;
+    }
+    graphics_->SetTexture(0, geometry->texture_);
+
+    graphics_->SetShaders(vs, ps);
+
+    // Apply translation
+    Matrix4 translate = Matrix4::IDENTITY;
+    translate.SetTranslation(Vector3(translation.x, translation.y, 0.f));
+    Matrix4 model = matrix_ * translate;
+
+    if (graphics_->NeedParameterUpdate(SP_OBJECT, this))
+        graphics_->SetShaderParameter(VSP_MODEL, model);
+    if (graphics_->NeedParameterUpdate(SP_CAMERA, this))
+        graphics_->SetShaderParameter(VSP_VIEWPROJ, projection);
+    if (graphics_->NeedParameterUpdate(SP_MATERIAL, this))
+        graphics_->SetShaderParameter(PSP_MATDIFFCOLOR, Color(1.0f, 1.0f, 1.0f, 1.0f));
+
+    float elapsedTime = context_->GetSubsystem<Time>()->GetElapsedTime();
+    graphics_->SetShaderParameter(VSP_ELAPSEDTIME, elapsedTime);
+    graphics_->SetShaderParameter(PSP_ELAPSEDTIME, elapsedTime);
 
     graphics_->Draw(TRIANGLE_LIST, 0, geometry->indexBuffer_->GetIndexCount(), 0, geometry->vertexBuffer_->GetVertexCount());
 }
@@ -213,6 +249,78 @@ void RmlRenderer::ReleaseCompiledGeometry(Rml::CompiledGeometryHandle geometry)
 void RmlRenderer::EnableScissorRegion(bool enable)
 {
     scrissorEnabled_ = enable;
+}
+
+void RmlRenderer::SetScissorRegion(const Matrix4& projection, const IntRect& scissor)
+{
+    if (transformEnabled_)
+    {
+        graphics_->SetColorWrite(false);
+
+        // Do not test the current value in the stencil buffer
+        // always accept any value on there for drawing
+        graphics_->SetStencilTest(true,
+            Urho3D::CompareMode::CMP_ALWAYS,
+            // Make every test succeed
+            Urho3D::StencilOp::OP_REF,
+            Urho3D::StencilOp::OP_KEEP,
+            Urho3D::StencilOp::OP_KEEP, 1);
+
+        Urho3D::VertexBuffer vertices(context_);
+        vertices.SetSize(4, Urho3D::MASK_POSITION, true);
+
+        float* vBuf = (float*)vertices.Lock(0, 4, true);
+        // Vertex 1
+        vBuf[0] = static_cast<float>(scissor.left_);
+        vBuf[1] = static_cast<float>(scissor.top_);
+        vBuf[2] = 0.f;
+        // Vertex 2
+        vBuf[3] = static_cast<float>(scissor.left_);
+        vBuf[4] = static_cast<float>(scissor.bottom_);
+        vBuf[5] = 0.f;
+        // Vertex 3
+        vBuf[6] = static_cast<float>(scissor.right_);
+        vBuf[7] = static_cast<float>(scissor.bottom_);
+        vBuf[8] = 0.f;
+        // Vertex 4
+        vBuf[9] = static_cast<float>(scissor.right_);
+        vBuf[10] = static_cast<float>(scissor.top_);
+        vBuf[11] = 0.f;
+        vertices.Unlock();
+
+        Urho3D::IndexBuffer indices(context_);
+        indices.SetSize(4, true);
+
+        int* iBuf = (int*)indices.Lock(0, 4, true);
+        iBuf[0] = 1;
+        iBuf[1] = 2;
+        iBuf[2] = 0;
+        iBuf[3] = 3;
+        indices.Unlock();
+
+        graphics_->SetVertexBuffer(&vertices);
+        graphics_->SetIndexBuffer(&indices);
+        graphics_->SetShaders(stencilVS_, stencilPS_);
+
+        if (graphics_->NeedParameterUpdate(Urho3D::SP_OBJECT, this))
+            graphics_->SetShaderParameter(Urho3D::VSP_MODEL, Urho3D::Matrix4::IDENTITY);
+        if (graphics_->NeedParameterUpdate(Urho3D::SP_CAMERA, this))
+            graphics_->SetShaderParameter(Urho3D::VSP_VIEWPROJ, projection);
+
+        graphics_->Draw(Urho3D::TRIANGLE_STRIP, 0, 4, 0, 4);
+
+        graphics_->SetColorWrite(true);
+
+        // Now we will only draw pixels where the corresponding stencil buffer value equals 1
+        graphics_->SetStencilTest(true,
+            Urho3D::CompareMode::CMP_EQUAL,
+            // Make sure you will no longer (over)write stencil values, even if any test succeeds
+            Urho3D::StencilOp::OP_KEEP,
+            Urho3D::StencilOp::OP_KEEP,
+            Urho3D::StencilOp::OP_KEEP, 1);
+    }
+    else
+        graphics_->SetScissorTest(true, scissor);
 }
 
 void RmlRenderer::SetScissorRegion(int x, int y, int width, int height)
@@ -257,8 +365,12 @@ void RmlRenderer::ReleaseTexture(Rml::TextureHandle textureHandle)
 
 void RmlRenderer::SetTransform(const Rml::Matrix4f* transform)
 {
+    transformEnabled_ = transform != nullptr;
     if (transform)
-        memcpy(&matrix_.m00_, transform->data(), sizeof(matrix_));
+    {
+        // memcpy(&matrix_.m00_, transform->data(), sizeof(matrix_));
+        matrix_ = ToUrho3D(transform);
+    }
     else
         matrix_ = Matrix4::IDENTITY;
 }
