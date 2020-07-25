@@ -1599,13 +1599,13 @@ void Renderer::UpdateQueuedViewport(unsigned index)
     }
 
     // Update view. This may queue further views. View will send update begin/end events once its state is set
+    ResetShadowMapAllocations(); // Each view can reuse the same shadow maps
     if (customView)
     {
         customView->Update(frame_);
     }
     else
     {
-        ResetShadowMapAllocations(); // Each view can reuse the same shadow maps
         view->Update(frame_);
     }
 }
